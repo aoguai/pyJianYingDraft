@@ -4,14 +4,14 @@ import json
 import uuid
 from copy import deepcopy
 
-from typing import Dict, Tuple, Any
+from typing import Dict, Tuple, Any, List
 from typing import Union, Optional, Literal
 
 from .time_util import Timerange, tim
 from .segment import ClipSettings, VisualSegment
 from .animation import SegmentAnimations, Text_animation
 
-from .metadata import FontType, EffectMeta
+from .metadata import FontType, EffectMeta, TextBubbleType, TextEffectType
 from .metadata import TextIntro, TextOutro, TextLoopAnim
 
 class TextStyle:
@@ -83,6 +83,52 @@ class TextStyle:
 
         self.auto_wrapping = auto_wrapping
         self.max_line_width = max_line_width
+
+    def export_style_range(self, start: int, end: int, *,
+                           font: Optional[Union["FontType", EffectMeta]] = None,
+                           effect: Optional[TextEffectType] = None,
+                           shadow: Optional["TextShadow"] = None,
+                           border: Optional["TextBorder"] = None,
+                           use_letter_color: Optional[bool] = None) -> Dict[str, Any]:
+        """为富文本构建内容样式"""
+        if isinstance(font, FontType):
+            font = font.value
+
+        style = {
+            "fill": {
+                "alpha": 1.0,
+                "content": {
+                    "render_type": "solid",
+                    "solid": {
+                        "alpha": 1.0,
+                        "color": list(self.color)
+                    }
+                }
+            },
+            "range": [start, end],
+            "size": self.size,
+            "bold": self.bold,
+            "italic": self.italic,
+            "underline": self.underline,
+            "strokes": [border.export_json()] if border else []
+        }
+        if font:
+            style["font"] = {
+                "id": font.resource_id,
+                "path": "D:"  # 占位 path
+            }
+        if effect is not None:
+            if not isinstance(effect, TextEffectType):
+                raise TypeError("Invalid text effect type %s" % type(effect))
+            style["effectStyle"] = {
+                "id": effect.value.resource_id,
+                "path": "C:"  # 占位 path
+            }
+        if shadow:
+            style["shadows"] = [shadow.export_json()]
+        if use_letter_color is not None:
+            style["useLetterColor"] = use_letter_color
+        return style
 
 class TextBorder:
     """文本描边的参数"""
@@ -261,6 +307,8 @@ class TextSegment(VisualSegment):
     """字体类型"""
     style: TextStyle
     """字体样式"""
+    style_ranges: Optional[List[Dict[str, Any]]]
+    """富文本样式, None表示无富文本样式"""
 
     border: Optional[TextBorder]
     """文本描边参数, None表示无描边"""
@@ -278,7 +326,8 @@ class TextSegment(VisualSegment):
                  font: Optional[FontType] = None,
                  style: Optional[TextStyle] = None, clip_settings: Optional[ClipSettings] = None,
                  border: Optional[TextBorder] = None, background: Optional[TextBackground] = None,
-                 shadow: Optional[TextShadow] = None):
+                 shadow: Optional[TextShadow] = None,
+                 style_ranges: Optional[List[Dict[str, Any]]] = None):
         """创建文本片段, 并指定其时间信息、字体样式及图像调节设置
 
         片段创建完成后, 可通过`ScriptFile.add_segment`方法将其添加到轨道中
@@ -292,6 +341,7 @@ class TextSegment(VisualSegment):
             border (`TextBorder`, optional): 文本描边参数, 默认无描边
             background (`TextBackground`, optional): 文本背景参数, 默认无背景
             shadow (`TextShadow`, optional): 文本阴影参数, 默认无阴影
+            style_ranges (`List[Dict[str, Any]]`, optional): 逐字/富文本样式, 默认无样式
         """
         super().__init__(uuid.uuid4().hex, None, timerange, 1.0, 1.0, False, clip_settings=clip_settings)
 
@@ -301,6 +351,7 @@ class TextSegment(VisualSegment):
         self.border = border
         self.background = background
         self.shadow = shadow
+        self.style_ranges = style_ranges
 
         self.bubble = None
         self.effect = None
@@ -312,6 +363,8 @@ class TextSegment(VisualSegment):
                           border=deepcopy(template.border), background=deepcopy(template.background),
                           shadow=deepcopy(template.shadow))
         new_segment.font = deepcopy(template.font)
+        if template.style_ranges is not None:
+            new_segment.style_ranges = deepcopy(template.style_ranges)
 
         # 处理动画等
         if template.animations_instance:
@@ -319,11 +372,94 @@ class TextSegment(VisualSegment):
             new_segment.animations_instance.animation_id = uuid.uuid4().hex
             new_segment.extra_material_refs.append(new_segment.animations_instance.animation_id)
         if template.bubble:
-            new_segment.add_bubble(template.bubble.effect_id, template.bubble.resource_id)
+            new_segment.bubble = TextBubble(template.bubble.effect_id, template.bubble.resource_id)
+            new_segment.extra_material_refs.append(new_segment.bubble.global_id)
         if template.effect:
-            new_segment.add_effect(template.effect.effect_id)
+            new_segment.effect = TextEffect(template.effect.effect_id, template.effect.resource_id)
+            new_segment.extra_material_refs.append(new_segment.effect.global_id)
 
         return new_segment
+
+    def set_style_ranges(self, style_ranges: List[Dict[str, Any]]) -> "TextSegment":
+        """设置富文本样式"""
+        self.style_ranges = style_ranges
+        return self
+
+    def add_style_range(self, start: int, end: int, *,
+                        style: Optional[TextStyle] = None,
+                        font: Optional[Union[FontType, EffectMeta]] = None,
+                        effect: Optional[TextEffectType] = None,
+                        shadow: Optional[TextShadow] = None,
+                        border: Optional[TextBorder] = None,
+                        use_letter_color: Optional[bool] = None) -> "TextSegment":
+        """添加富文本样式"""
+        if self.style_ranges is None:
+            self.style_ranges = []
+
+        if font is None:
+            font = self.font
+
+        style_obj = (style or self.style).export_style_range(
+            start, end,
+            font=font,
+            effect=effect,
+            shadow=shadow if shadow is not None else self.shadow,
+            border=border if border is not None else self.border,
+            use_letter_color=use_letter_color
+        )
+        if effect is None and self.effect and "effectStyle" not in style_obj:
+            style_obj["effectStyle"] = {
+                "id": self.effect.resource_id,
+                "path": "C:"  # 占位 path
+            }
+        self.style_ranges.append(style_obj)
+        return self
+
+    def set_style_ranges_by_chars(self, *,
+                                  styles: Optional[List[Optional[TextStyle]]] = None,
+                                  fonts: Optional[List[Optional[Union[FontType, EffectMeta]]]] = None,
+                                  effects: Optional[List[Optional[TextEffectType]]] = None,
+                                  shadows: Optional[List[Optional[TextShadow]]] = None,
+                                  borders: Optional[List[Optional[TextBorder]]] = None,
+                                  use_letter_colors: Optional[List[Optional[bool]]] = None) -> "TextSegment":
+        """为逐字样式批量生成range，列表长度需与文本长度一致。"""
+        length = len(self.text)
+        for lst in [styles, fonts, effects, shadows, borders, use_letter_colors]:
+            if lst is not None and len(lst) != length:
+                raise ValueError("逐字样式列表长度必须与文本长度一致")
+
+        self.style_ranges = []
+        for i in range(length):
+            self.add_style_range(
+                i, i + 1,
+                style=styles[i] if styles else None,
+                font=fonts[i] if fonts else None,
+                effect=effects[i] if effects else None,
+                shadow=shadows[i] if shadows else None,
+                border=borders[i] if borders else None,
+                use_letter_color=use_letter_colors[i] if use_letter_colors else None
+            )
+        return self
+
+    def _merge_style_range(self, style_range: Dict[str, Any]) -> Dict[str, Any]:
+        if "range" not in style_range:
+            raise ValueError("style_range missing 'range'")
+        start, end = style_range["range"]
+        base = self.style.export_style_range(
+            start, end,
+            font=self.font,
+            effect=None,
+            shadow=self.shadow,
+            border=self.border
+        )
+        if self.effect and "effectStyle" not in base:
+            base["effectStyle"] = {
+                "id": self.effect.resource_id,
+                "path": "C:"  # 占位 path
+            }
+        merged = deepcopy(base)
+        merged.update(style_range)
+        return merged
 
     def add_animation(self, animation_type: Union[TextIntro, TextOutro, TextLoopAnim],
                       duration: Union[str, float, None] = None) -> "TextSegment":
@@ -360,73 +496,66 @@ class TextSegment(VisualSegment):
 
         return self
 
-    def add_bubble(self, effect_id: str, resource_id: str) -> "TextSegment":
+    def add_bubble(self, effect: TextBubbleType) -> "TextSegment":
         """根据素材信息添加气泡效果, 相应素材信息可通过`ScriptFile.inspect_material`从模板中获取
 
         Args:
-            effect_id (`str`): 气泡效果的effect_id
-            resource_id (`str`): 气泡效果的resource_id
+            effect (`TextBubbleType`): 文本气泡类型
         """
-        self.bubble = TextBubble(effect_id, resource_id)
+        if not isinstance(effect, TextBubbleType):
+            raise TypeError("Invalid bubble effect type %s" % type(effect))
+        self.bubble = TextBubble(effect.value.effect_id, effect.value.resource_id)
         self.extra_material_refs.append(self.bubble.global_id)
         return self
 
-    def add_effect(self, effect_id: str) -> "TextSegment":
+    def add_effect(self, effect: TextEffectType) -> "TextSegment":
         """根据素材信息添加花字效果, 相应素材信息可通过`ScriptFile.inspect_material`从模板中获取
 
         Args:
-            effect_id (`str`): 花字效果的effect_id, 也同时是其resource_id
+            effect (`TextEffectType`): 文本花字类型
         """
-        self.effect = TextEffect(effect_id, effect_id)
+        if not isinstance(effect, TextEffectType):
+            raise TypeError("Invalid text effect type %s" % type(effect))
+        self.effect = TextEffect(effect.value.effect_id, effect.value.resource_id)
         self.extra_material_refs.append(self.effect.global_id)
         return self
 
     def export_material(self) -> Dict[str, Any]:
         """与此文本片段联系的素材, 以此不再单独定义Text_material类"""
+        if self.style_ranges:
+            styles = [self._merge_style_range(style) for style in self.style_ranges]
+        else:
+            styles = [
+                self.style.export_style_range(
+                    0, len(self.text),
+                    font=self.font,
+                    effect=None,
+                    shadow=self.shadow,
+                    border=self.border
+                )
+            ]
+            if self.effect and "effectStyle" not in styles[0]:
+                styles[0]["effectStyle"] = {
+                    "id": self.effect.resource_id,
+                    "path": "C:"  # 占位 path
+                }
+
+        content_json = {
+            "styles": styles,
+            "text": self.text
+        }
+
+        has_border = self.border is not None or any(style.get("strokes") for style in styles)
+        has_shadow = self.shadow is not None or any(style.get("shadows") for style in styles)
+
         # 叠加各类效果的flag
         check_flag: int = 7
-        if self.border:
+        if has_border:
             check_flag |= 8
         if self.background:
             check_flag |= 16
-        if self.shadow:
+        if has_shadow:
             check_flag |= 32
-
-        content_json = {
-            "styles": [
-                {
-                    "fill": {
-                        "alpha": 1.0,
-                        "content": {
-                            "render_type": "solid",
-                            "solid": {
-                                "alpha": 1.0,
-                                "color": list(self.style.color)
-                            }
-                        }
-                    },
-                    "range": [0, len(self.text)],
-                    "size": self.style.size,
-                    "bold": self.style.bold,
-                    "italic": self.style.italic,
-                    "underline": self.style.underline,
-                    "strokes": [self.border.export_json()] if self.border else []
-                }
-            ],
-            "text": self.text
-        }
-        if self.font:
-            content_json["styles"][0]["font"] = {
-                "id": self.font.resource_id,
-                "path": "D:"  # 并不会真正在此处放置字体文件
-            }
-        if self.effect:
-            content_json["styles"][0]["effectStyle"] = {
-                "id": self.effect.effect_id,
-                "path": "C:"  # 并不会真正在此处放置素材文件
-            }
-        if self.shadow:
-            content_json["styles"][0]["shadows"] = [self.shadow.export_json()]
 
         ret = {
             "id": self.material_id,
@@ -450,6 +579,9 @@ class TextSegment(VisualSegment):
 
             # 发光 (+64)，属性由extra_material_refs记录
         }
+
+        if self.style_ranges:
+            ret["is_rich_text"] = True
 
         if self.background:
             ret.update(self.background.export_json())

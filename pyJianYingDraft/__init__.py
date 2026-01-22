@@ -15,6 +15,7 @@ from .metadata import MaskType
 from .metadata import TransitionType, FilterType
 from .metadata import IntroType, OutroType, GroupAnimationType
 from .metadata import TextIntro, TextOutro, TextLoopAnim
+from .metadata import TextEffectType, TextBubbleType
 from .metadata import AudioSceneEffectType
 from .metadata import VideoSceneEffectType, VideoCharacterEffectType
 
@@ -174,6 +175,8 @@ Group_animation_type = _DeprecatedEnum(GroupAnimationType, "Group_animation_type
 Text_intro = _DeprecatedEnum(TextIntro, "Text_intro", "TextIntro")
 Text_outro = _DeprecatedEnum(TextOutro, "Text_outro", "TextOutro")
 Text_loop_anim = _DeprecatedEnum(TextLoopAnim, "Text_loop_anim", "TextLoopAnim")
+Text_effect_type = _DeprecatedEnum(TextEffectType, "Text_effect_type", "TextEffectType")
+Text_bubble_type = _DeprecatedEnum(TextBubbleType, "Text_bubble_type", "TextBubbleType")
 Audio_scene_effect_type = _DeprecatedEnum(AudioSceneEffectType, "Audio_scene_effect_type", "AudioSceneEffectType")
 Video_scene_effect_type = _DeprecatedEnum(VideoSceneEffectType, "Video_scene_effect_type", "VideoSceneEffectType")
 Video_character_effect_type = _DeprecatedEnum(VideoCharacterEffectType, "Video_character_effect_type", "VideoCharacterEffectType")
@@ -202,6 +205,8 @@ __all__ = [
     "TextIntro",
     "TextOutro",
     "TextLoopAnim",
+    "TextEffectType",
+    "TextBubbleType",
     "AudioSceneEffectType",
     "VideoSceneEffectType",
     "VideoCharacterEffectType",
@@ -246,6 +251,8 @@ __all__ = [
     "Text_intro",
     "Text_outro",
     "Text_loop_anim",
+    "Text_effect_type",
+    "Text_bubble_type",
     "Audio_scene_effect_type",
     "Video_scene_effect_type",
     "Video_character_effect_type",

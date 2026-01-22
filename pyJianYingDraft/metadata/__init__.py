@@ -25,6 +25,8 @@ from .speech_to_song import SpeechToSongType
 from .text_intro import TextIntro
 from .text_outro import TextOutro
 from .text_loop import TextLoopAnim
+from .text_effect import TextEffectType
+from .text_bubble import TextBubbleType
 
 # 其它
 from .font_meta import FontType
@@ -47,6 +49,8 @@ __all__ = [
     "TextIntro",
     "TextOutro",
     "TextLoopAnim",
+    "TextEffectType",
+    "TextBubbleType",
     "AudioSceneEffectType",
     "ToneEffectType",
     "SpeechToSongType",
