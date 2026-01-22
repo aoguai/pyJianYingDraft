@@ -1,10 +1,6 @@
 # pyJianYingDraft
 ### 轻量、灵活、易上手的Python剪映草稿生成及导出工具，构建全自动视频剪辑/混剪流水线！
 
-> 🧪 本项目的**CapCut版本**正在开发中，欢迎关注[CapCut版本仓库](https://github.com/GuanYixuan/pyCapCut)
-
-> 📢 欢迎加入[Discord服务器](https://discord.gg/WfHgGQvhyW)进行用法或新功能的讨论
-
 ## 使用思路
 ![使用思路](readme_assets/使用思路.jpg)
 
@@ -58,7 +54,7 @@
 - ☑️ [添加文本、设置字体及样式](#添加文本)、修改文本片段的[位置及旋转设置](#视频整体调节)
 - ☑️ 文本的[关键帧](#关键帧)以及[动画](#添加片段动画)
 - ☑️ 文字描边、背景和阴影
-- ☑️ 文字气泡效果和花字效果[(示例代码)](demo.py)
+- ☑️ 文字气泡/花字/逐字样式效果[(示例代码)](demo.py)
 - ☑️ 文本[自动换行](#文本自动换行)，支持设置最大行宽
 - ☑️ [导入`.srt`文件](#导入字幕)生成字幕并批量设置格式
 
@@ -75,7 +71,7 @@ pip install pyJianYingDraft
 - **Linux/MacOS**：支持草稿生成和模板模式，但**不支持自动导出**，且注意**生成的草稿仍然需要在Windows版剪映下导出**。
 
 # 快速上手
-例程`demo.py`将创建包含音视频素材和一行文本的剪映草稿文件，并且添加了音频淡入、视频入场动画、转场效果和文本气泡/花字。
+例程`demo.py`将创建包含音视频素材和一行文本的剪映草稿文件，并且添加了音频淡入、视频入场动画、转场效果以及文本气泡/花字/逐字样式示例。
 
 这个例程的操作方法如下：
 1. 找到剪映的**草稿文件夹路径**（类似`.../JianyingPro Drafts`），用其替换代码中的`<你的草稿文件夹>`
@@ -575,6 +571,40 @@ seg2 = draft.TextSegment("这是一段很长的文本内容，当超过设定的
                                           auto_wrapping=True,      # 启用自动换行
                                           max_line_width=0.7))     # 最大行宽占屏幕70%
 ```
+
+#### 逐字样式（富文本）
+可以通过`TextSegment.set_style_ranges_by_chars`为每个字符指定样式，`None`表示继承默认样式。设置后导出会自动标记为富文本（`is_rich_text`）。
+例如：交替颜色的逐字样式
+```python
+from pyJianYingDraft import FontType, TextStyle, ClipSettings
+
+text_segment = draft.TextSegment(
+    "测试中文字幕",
+    trange("0s", "3s"),
+    font=FontType.文轩体,
+    style=TextStyle(size=5.0, align=1),
+    clip_settings=ClipSettings(transform_y=-0.8),
+)
+
+alt_style = TextStyle(
+    size=text_segment.style.size,
+    bold=text_segment.style.bold,
+    italic=text_segment.style.italic,
+    underline=text_segment.style.underline,
+    color=(1.0, 0.4, 0.0),
+    alpha=text_segment.style.alpha,
+    align=text_segment.style.align,
+    vertical=text_segment.style.vertical,
+    letter_spacing=text_segment.style.letter_spacing,
+    line_spacing=text_segment.style.line_spacing,
+    auto_wrapping=text_segment.style.auto_wrapping,
+    max_line_width=text_segment.style.max_line_width,
+)
+
+styles = [alt_style if i % 2 == 0 else None for i in range(len(text_segment.text))]
+text_segment.set_style_ranges_by_chars(styles=styles)
+```
+也可以传入`effects`/`fonts`列表，为每个字符指定花字或字体效果。
 
 #### 导入字幕
 > ℹ 目前只支持导入**SRT格式**的字幕文件
