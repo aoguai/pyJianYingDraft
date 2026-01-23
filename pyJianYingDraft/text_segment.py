@@ -345,6 +345,10 @@ class TextSegment(VisualSegment):
         """
         super().__init__(uuid.uuid4().hex, None, timerange, 1.0, 1.0, False, clip_settings=clip_settings)
 
+        # 新版剪映(≥9.x)的文本片段通常不会引用 speed 素材；
+        # 这里清空默认 speed 引用，避免生成 draft 时 extra_material_refs 指向不存在的 speeds/materials。
+        self.extra_material_refs = []
+
         if isinstance(text, list):
             if not all(isinstance(item, str) for item in text):
                 raise TypeError("text must be str or List[str]")
@@ -587,10 +591,170 @@ class TextSegment(VisualSegment):
             # 发光 (+64)，属性由extra_material_refs记录
         }
 
-        if self.style_ranges:
-            ret["is_rich_text"] = True
+        # 剪映原生字幕(text.type=subtitle)素材在 JSON 中会包含大量 UI/编辑态字段，
+        # 若缺失会导致字幕被当成“多个独立文本”而无法在字幕面板中统一编辑/应用样式。
+        if ret["type"] == "subtitle":
+            def _rgb_to_hex(rgb: Tuple[float, float, float]) -> str:
+                def _clamp255(v: float) -> int:
+                    return max(0, min(255, int(round(v * 255))))
 
-        if self.background:
-            ret.update(self.background.export_json())
+                r, g, b = (_clamp255(x) for x in rgb)
+                return f"#{r:02X}{g:02X}{b:02X}"
+
+            is_rich_text = bool(self.style_ranges)
+
+            # 这些字段的默认值参考“剪映手动导入字幕(srt)后生成的 draft_content.json”
+            # （见：pyJianYingDraft/新预设/Presets/.../preset_draft/draft_content.json）。
+            ret.update({
+                "add_type": getattr(self, "material_add_type", 2),
+
+                "background_fill": "",
+                "background_style": 0,
+                "background_color": "",
+                "background_alpha": 1.0,
+                "background_height": 0.14,
+                "background_width": 0.14,
+                "background_horizontal_offset": 0.0,
+                "background_vertical_offset": 0.0,
+                "background_round_radius": 0.0,
+
+                "base_content": "",
+                "bold_width": 0.0,
+
+                "border_alpha": 1.0,
+                "border_color": "",
+                "border_width": (self.border.width if self.border else TextBorder().width),
+
+                "caption_template_info": {
+                    "category_id": "",
+                    "category_name": "",
+                    "effect_id": "",
+                    "is_new": False,
+                    "path": "",
+                    "request_id": "",
+                    "resource_id": "",
+                    "resource_name": "",
+                    "source_platform": 0,
+                    "third_resource_id": "",
+                },
+
+                "combo_info": {"text_templates": []},
+                "current_words": {"end_time": [], "start_time": [], "text": []},
+                "cutoff_postfix": "",
+
+                "fixed_height": -1.0,
+                "fixed_width": -1.0,
+
+                "font_category_id": "",
+                "font_category_name": "",
+                "font_id": "",
+                "font_name": "",
+                "font_path": "",
+                "font_resource_id": "",
+                "font_size": float(self.style.size),
+                "font_source_platform": 0,
+                "font_team_id": "",
+                "font_third_resource_id": "",
+                "font_title": "none",
+                "font_url": "",
+                "fonts": [],
+
+                "force_apply_line_max_width": False,
+                "group_id": getattr(self, "material_group_id", ""),
+                "has_shadow": bool(self.shadow),
+
+                "initial_scale": 1.0,
+                "inner_padding": -1.0,
+                "is_lyric_effect": False,
+                "is_rich_text": is_rich_text,
+                "is_words_linear": False,
+
+                "italic_degree": 0,
+                "ktv_color": "",
+                "language": "",
+                "layer_weight": 1,
+                "lyric_group_id": "",
+                "lyrics_template": "",
+                "multi_language_current": "none",
+
+                "name": "",
+                "oneline_cutoff": False,
+                "operation_type": 0,
+                "original_size": [],
+
+                "preset_category": "",
+                "preset_category_id": "",
+                "preset_has_set_alignment": False,
+                "preset_id": "",
+                "preset_index": 0,
+                "preset_name": "",
+
+                "recognize_task_id": "",
+                "recognize_text": "",
+                "recognize_type": 0,
+                "relevance_segment": [],
+
+                "shadow_alpha": 0.9,
+                "shadow_angle": -45.0,
+                "shadow_color": "",
+                "shadow_distance": 5.0,
+                "shadow_point": {"x": 0.6363961030678928, "y": -0.6363961030678928},
+                "shadow_smoothing": 0.45,
+
+                "shape_clip_x": False,
+                "shape_clip_y": False,
+                "source_from": "",
+                "ssml_content": "",
+                "style_name": "",
+
+                "sub_template_id": -1,
+                "sub_type": getattr(self, "material_sub_type", 0),
+
+                "subtitle_keywords": None,
+                "subtitle_keywords_config": None,
+                "subtitle_template_original_fontsize": 0.0,
+
+                "text_alpha": float(self.style.alpha),
+                "text_color": _rgb_to_hex(self.style.color),
+                "text_curve": None,
+                "text_preset_resource_id": "",
+                "text_size": int(round(self.style.size * 6)),
+                "text_to_audio_ids": [],
+
+                "translate_original_text": "",
+                "tts_auto_update": False,
+
+                "underline": bool(self.style.underline),
+                "underline_offset": 0.22,
+                "underline_width": 0.05,
+
+                "use_effect_default_color": True,
+                "words": {"end_time": [], "start_time": [], "text": []},
+            })
+
+            # 若启用背景，则用真实背景值覆盖默认值
+            if self.background:
+                ret.update(self.background.export_json())
+            else:
+                ret["background_style"] = 0
+                ret["background_color"] = ""
+
+            # 若启用描边/阴影，补充 UI 字段
+            if self.border:
+                ret["border_color"] = _rgb_to_hex(self.border.color)
+                ret["border_alpha"] = float(self.border.alpha)
+                ret["border_width"] = float(self.border.width)
+            if self.shadow:
+                ret["has_shadow"] = True
+                ret["shadow_alpha"] = float(self.shadow.alpha)
+                ret["shadow_angle"] = float(self.shadow.angle)
+                ret["shadow_distance"] = float(self.shadow.distance)
+                ret["shadow_color"] = _rgb_to_hex(self.shadow.color)
+        else:
+            if self.style_ranges:
+                ret["is_rich_text"] = True
+
+            if self.background:
+                ret.update(self.background.export_json())
 
         return ret

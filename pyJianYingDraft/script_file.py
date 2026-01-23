@@ -1,6 +1,7 @@
 import os
 import json
 import math
+import time
 from copy import deepcopy
 
 from typing import Optional, Literal, Union, overload
@@ -464,6 +465,11 @@ class ScriptFile:
         with open(srt_path, "r", encoding="utf-8-sig") as srt_file:
             lines = srt_file.readlines()
 
+        # 让同一次导入的所有字幕共享一个 group_id，剪映会把它们视为“同一批导入字幕”
+        # 从而在字幕面板中支持统一编辑/应用样式。
+        # 使用纳秒时间戳避免在同一毫秒内多次导入导致 group_id 冲突
+        subtitle_group_id = f"import_{time.time_ns()}"
+
         def __add_text_segment(text: str, t_range: Timerange) -> None:
             if style_reference:
                 seg = TextSegment.create_from_template(text, t_range, style_reference)
@@ -471,6 +477,19 @@ class ScriptFile:
                     seg.clip_settings = deepcopy(clip_settings)
             else:
                 seg = TextSegment(text, t_range, style=text_style, clip_settings=clip_settings)
+
+            # 强制字幕类型（否则会退化成普通文本，剪映不会给字幕面板的批量编辑能力）
+            seg.style.auto_wrapping = True
+            seg.material_group_id = subtitle_group_id
+            seg.material_add_type = 2
+            seg.material_sub_type = 0
+
+            # 剪映原生导入字幕会给每个片段挂一个空的 sticker_animation，并把其 id 放在 extra_material_refs
+            if seg.animations_instance is None:
+                seg.animations_instance = SegmentAnimations()
+            if seg.animations_instance.animation_id not in seg.extra_material_refs:
+                seg.extra_material_refs.insert(0, seg.animations_instance.animation_id)
+
             self.add_segment(seg, track_name)
 
         index = 0
