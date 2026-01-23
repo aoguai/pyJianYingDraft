@@ -6,7 +6,7 @@
 import uuid
 from copy import deepcopy
 
-from typing import Optional, Literal, Union
+from typing import Optional, Union
 from typing import Dict, List, Any
 
 from .time_util import tim, Timerange
@@ -28,11 +28,19 @@ class AudioEffect:
     resource_id: str
     """资源id, 由剪映本身提供"""
 
-    category_id: Literal["sound_effect", "tone", "speech_to_song"]
-    category_name: Literal["场景音", "音色", "声音成曲"]
-    category_index: Literal[1, 2, 3]
+    category_id: str
+    category_name: str
+    category_index: int
 
     audio_adjust_params: List[EffectParamInstance]
+
+    is_vc_clone_tone: bool
+    third_resource_id: str
+    source_platform: int
+    vc_type: str
+    speaker_id: str
+    production_path: str
+    time_range: Timerange
 
     def __init__(self, effect_meta: Union[AudioSceneEffectType, ToneEffectType, SpeechToSongType],
                  params: Optional[List[Optional[float]]] = None):
@@ -60,6 +68,22 @@ class AudioEffect:
 
         self.audio_adjust_params = effect_meta.value.parse_params(params)
 
+        self.is_vc_clone_tone = bool(getattr(effect_meta.value, "is_vc_clone_tone", False))
+        self.third_resource_id = getattr(effect_meta.value, "third_resource_id", "") or self.resource_id
+        self.source_platform = int(getattr(effect_meta.value, "source_platform", 0) or 0)
+        self.vc_type = getattr(effect_meta.value, "vc_type", "")
+        self.speaker_id = getattr(effect_meta.value, "speaker_id", "")
+        self.production_path = getattr(effect_meta.value, "production_path", "")
+        self.time_range = Timerange(0, 0)
+
+        # 某些音效在草稿中会使用 UI 分类（例如 “热门”），允许元数据覆盖
+        category_id = getattr(effect_meta.value, "category_id", "")
+        if category_id:
+            self.category_id = category_id
+        category_name = getattr(effect_meta.value, "category_name", "")
+        if category_name:
+            self.category_name = category_name
+
     def export_json(self) -> Dict[str, Any]:
         return {
             "audio_adjust_params": [param.export_json() for param in self.audio_adjust_params],
@@ -68,11 +92,15 @@ class AudioEffect:
             "id": self.effect_id,
             "is_ugc": False,
             "name": self.name,
-            "production_path": "",
+            "production_path": self.production_path,
             "resource_id": self.resource_id,
-            "speaker_id": "",
+            "speaker_id": self.speaker_id,
             "sub_type": self.category_index,
-            "time_range": {"duration": 0, "start": 0},  # 似乎并未用到
+            "time_range": self.time_range.export_json(),
+            "third_resource_id": self.third_resource_id,
+            "source_platform": self.source_platform,
+            "vc_type": self.vc_type,
+            "is_vc_clone_tone": self.is_vc_clone_tone,
             "type": "audio_effect"
             # 不导出path和constant_material_id
         }
@@ -156,7 +184,11 @@ class AudioSegment(MediaSegment):
             raise ValueError("为音频效果 %s 传入了过多的参数" % effect_type.value.name)
 
         effect_inst = AudioEffect(effect_type, params)
-        if effect_inst.category_id in [eff.category_id for eff in self.effects]:
+        if self.source_timerange is not None:
+            effect_inst.time_range = deepcopy(self.source_timerange)
+
+        # 以 sub_type(1/2/3) 做互斥判断，避免高版本中 category_id 变为“热门/推荐/...“后导致重复添加
+        if effect_inst.category_index in [eff.category_index for eff in self.effects]:
             raise ValueError("当前音频片段已经有此类型 (%s) 的音效了" % effect_inst.category_name)
         self.effects.append(effect_inst)
         self.extra_material_refs.append(effect_inst.effect_id)

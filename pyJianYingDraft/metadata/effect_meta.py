@@ -22,6 +22,21 @@ class EffectParam:
         self.default_value = default_value
         self.min_value = min_value
         self.max_value = max_value
+        self.is_extra = False
+        self.extra_value = None
+
+    @classmethod
+    def extra(cls, name: str, value: Any) -> "EffectParam":
+        """“额外字段”参数，用于兼容新字段
+
+        说明：
+        - 这些字段不参与 `parse_params()` 的参数映射（不会写入 audio_adjust_params / adjust_params）。
+        - EffectMeta 会将它们“提升”为元数据对象上的属性：`meta.<name> = value`。
+        """
+        inst = cls(name, 0.0, 0.0, 0.0)
+        inst.is_extra = True
+        inst.extra_value = value
+        return inst
 
 class EffectParamInstance(EffectParam):
     """特效参数实例"""
@@ -65,13 +80,22 @@ class EffectMeta:
     params: List[EffectParam]
     """效果的参数信息"""
 
-    def __init__(self, name: str, is_vip: bool, resource_id: str, effect_id: str, md5: str, params: List[EffectParam] = []):
+    def __init__(self, name: str, is_vip: bool, resource_id: str, effect_id: str, md5: str,
+                 params: Optional[List[EffectParam]] = None):
         self.name = name
         self.is_vip = is_vip
         self.resource_id = resource_id
         self.effect_id = effect_id
         self.md5 = md5
-        self.params = params
+        self.params = []
+        if params is None:
+            return
+
+        for param in params:
+            if getattr(param, "is_extra", False):
+                setattr(self, param.name, getattr(param, "extra_value", None))
+                continue
+            self.params.append(param)
 
     def parse_params(self, params: Optional[List[Optional[float]]]) -> List[EffectParamInstance]:
         """解析参数列表(范围0~100), 返回参数实例列表"""

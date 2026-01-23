@@ -16,7 +16,7 @@ from .metadata import TransitionType, FilterType
 from .metadata import IntroType, OutroType, GroupAnimationType
 from .metadata import TextIntro, TextOutro, TextLoopAnim
 from .metadata import TextEffectType, TextBubbleType
-from .metadata import AudioSceneEffectType
+from .metadata import AudioSceneEffectType, ToneEffectType, SpeechToSongType
 from .metadata import VideoSceneEffectType, VideoCharacterEffectType
 
 from .track import TrackType
@@ -178,6 +178,8 @@ Text_loop_anim = _DeprecatedEnum(TextLoopAnim, "Text_loop_anim", "TextLoopAnim")
 Text_effect_type = _DeprecatedEnum(TextEffectType, "Text_effect_type", "TextEffectType")
 Text_bubble_type = _DeprecatedEnum(TextBubbleType, "Text_bubble_type", "TextBubbleType")
 Audio_scene_effect_type = _DeprecatedEnum(AudioSceneEffectType, "Audio_scene_effect_type", "AudioSceneEffectType")
+Tone_effect_type = _DeprecatedEnum(ToneEffectType, "Tone_effect_type", "ToneEffectType")
+Speech_to_song_type = _DeprecatedEnum(SpeechToSongType, "Speech_to_song_type", "SpeechToSongType")
 Video_scene_effect_type = _DeprecatedEnum(VideoSceneEffectType, "Video_scene_effect_type", "VideoSceneEffectType")
 Video_character_effect_type = _DeprecatedEnum(VideoCharacterEffectType, "Video_character_effect_type", "VideoCharacterEffectType")
 Keyframe_property = _DeprecatedEnum(KeyframeProperty, "Keyframe_property", "KeyframeProperty")
@@ -208,6 +210,8 @@ __all__ = [
     "TextEffectType",
     "TextBubbleType",
     "AudioSceneEffectType",
+    "ToneEffectType",
+    "SpeechToSongType",
     "VideoSceneEffectType",
     "VideoCharacterEffectType",
     "CropSettings",
@@ -254,6 +258,8 @@ __all__ = [
     "Text_effect_type",
     "Text_bubble_type",
     "Audio_scene_effect_type",
+    "Tone_effect_type",
+    "Speech_to_song_type",
     "Video_scene_effect_type",
     "Video_character_effect_type",
     "Clip_settings",

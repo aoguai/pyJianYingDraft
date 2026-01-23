@@ -92,7 +92,26 @@ class ToneEffectType(EffectEnum):
     沉稳解说    = EffectMeta("沉稳解说", True, "7367676791164506636", "63231110", "f554735f65a98cc4da17a1c53ef6a886", [])
     温柔姐姐    = EffectMeta("温柔姐姐", True, "7379565769190806079", "70562785", "f554735f65a98cc4da17a1c53ef6a886", [])
     熊二        = EffectMeta("熊二", True, "7250403222798471740", "16627311", "8dd8889045e6c065177df791ddb3dfb8", [])
-    猴哥        = EffectMeta("猴哥", True, "7236944659547689531", "14477015", "4f6a1fbc0000e178c724d355efea1d9f", [])
+    猴哥        = EffectMeta(
+                    "猴哥",
+                    True,
+                    "7532395986618946102",
+                    "14477015",
+                    "4f6a1fbc0000e178c724d355efea1d9f",
+                    [
+                        EffectParam.extra("category_id", "remen"),
+                        EffectParam.extra("category_name", "热门"),
+                        EffectParam.extra("speaker_id", "zh_male_sunwukong"),
+                        EffectParam.extra("vc_type", "speech"),
+                        EffectParam.extra("source_platform", 1),
+                        EffectParam.extra("third_resource_id", "7532395986618946102"),
+                        EffectParam.extra(
+                            "production_path",
+                            "##_presetpath_placeholder_0E685133-18CE-45ED-8CB8-2904A212EC80_##/Resources/1e448b3ec45ae3be87e9dcc4926da31d.mp3",
+                        ),
+                        EffectParam.extra("is_vc_clone_tone", False),
+                    ],
+                )
     甜美悦悦    = EffectMeta("甜美悦悦", True, "7325710673978069530", "40932253", "f554735f65a98cc4da17a1c53ef6a886", [])
     生活小妙招  = EffectMeta("生活小妙招", True, "7328092409525441065", "42060737", "f554735f65a98cc4da17a1c53ef6a886", [])
     电竞解说    = EffectMeta("电竞解说", True, "7325711893551649330", "40933559", "f554735f65a98cc4da17a1c53ef6a886", [])

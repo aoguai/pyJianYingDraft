@@ -30,6 +30,8 @@ audio_segment = draft.AudioSegment(
     volume=0.6,
 )  # 音量设置为60%(-4.4dB)
 audio_segment.add_fade("1s", "0s")  # 增加一个1s的淡入
+# 使用猴哥音色
+audio_segment.add_effect(draft.ToneEffectType.猴哥)
 
 # 创建视频片段（使用便捷构造，直接传入素材路径）
 video_segment = draft.VideoSegment(
