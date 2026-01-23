@@ -579,15 +579,34 @@ class ScriptFile:
         # 收集所有需要复制的素材ID
         material_ids = set()
         segments: List[Dict[str, Any]] = track.raw_data.get("segments", [])
+
+        text_template_by_id: Dict[str, Dict[str, Any]] = {}
+        for tpl in source_file.imported_materials.get("text_templates", []) or []:
+            if isinstance(tpl, dict) and tpl.get("id"):
+                text_template_by_id[tpl["id"]] = tpl
+
         for segment in segments:
             # 主素材ID
-            material_id = segment.get("material_id")
-            if material_id:
-                material_ids.add(material_id)
+            segment_material_id = segment.get("material_id")
+            if segment_material_id:
+                material_ids.add(segment_material_id)
 
             # extra_material_refs中的素材ID
             extra_refs: List[str] = segment.get("extra_material_refs", [])
             material_ids.update(extra_refs)
+
+            # 若为文本模板(text_template)，递归收集其引用的子文本与特效/动画素材
+            template = text_template_by_id.get(segment_material_id)
+            if template is not None:
+                for r in template.get("text_info_resources", []) or []:
+                    if not isinstance(r, dict):
+                        continue
+                    text_material_id = r.get("text_material_id")
+                    if text_material_id:
+                        material_ids.add(text_material_id)
+                    for ref in r.get("extra_material_refs", []) or []:
+                        if ref:
+                            material_ids.add(ref)
 
         # 复制素材
         for material_type, material_list in source_file.imported_materials.items():
@@ -696,7 +715,9 @@ class ScriptFile:
         Args:
             track (`EditableTrack`): 要替换文字的文本轨道, 由`get_imported_track`获取
             segment_index (`int`): 要替换文字的片段下标, 从0开始
-            text (`str` or `List[str]`): 新的文字内容, 对于文本模板而言应传入一个字符串列表.
+            text (`str` or `List[str]`): 新的文字内容.
+                - 普通文本片段：若传入 `List[str]`，表示多段落文本，会用换行符拼接后写入同一个文本素材。
+                - 文本模板片段：应传入字符串列表，列表元素将按顺序映射到模板的每一段文本。
             recalc_style (`bool`): 是否重新计算字体样式分布, 即调整各字体样式应用范围以尽量维持原有占比不变, 默认开启.
 
         Raises:
@@ -711,6 +732,9 @@ class ScriptFile:
 
         def __recalc_style_range(old_len: int, new_len: int, styles: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
             """调整字体样式分布"""
+            if old_len <= 0:
+                # 原文本为空时无法按比例换算，直接返回原 styles（避免除零）
+                return styles
             new_styles: List[Dict[str, Any]] = []
             for style in styles:
                 start = math.ceil(style["range"][0] / old_len * new_len)
@@ -728,9 +752,11 @@ class ScriptFile:
                 continue
 
             if isinstance(text, list):
-                if len(text) != 1:
-                    raise ValueError(f"正常文本片段只能有一个文字内容, 但替换内容是 {text}")
-                text = text[0]
+                if not all(isinstance(item, str) for item in text):
+                    raise TypeError("text must be str or List[str]")
+                text = "\n".join(text)
+            elif not isinstance(text, str):
+                raise TypeError("text must be str or List[str]")
 
             content = json.loads(mat["content"])
             if recalc_style:

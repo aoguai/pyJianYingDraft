@@ -302,7 +302,7 @@ class TextSegment(VisualSegment):
     """文本片段类, 目前仅支持设置基本的字体样式"""
 
     text: str
-    """文本内容"""
+    """文本内容（多段落时用换行符拼接）"""
     font: Optional[EffectMeta]
     """字体类型"""
     style: TextStyle
@@ -322,7 +322,7 @@ class TextSegment(VisualSegment):
     effect: Optional[TextEffect]
     """文本花字效果, 在放入轨道时加入素材列表中, 目前仅支持一部分花字效果"""
 
-    def __init__(self, text: str, timerange: Timerange, *,
+    def __init__(self, text: Union[str, List[str]], timerange: Timerange, *,
                  font: Optional[FontType] = None,
                  style: Optional[TextStyle] = None, clip_settings: Optional[ClipSettings] = None,
                  border: Optional[TextBorder] = None, background: Optional[TextBackground] = None,
@@ -333,7 +333,7 @@ class TextSegment(VisualSegment):
         片段创建完成后, 可通过`ScriptFile.add_segment`方法将其添加到轨道中
 
         Args:
-            text (`str`): 文本内容
+            text (`str` or `List[str]`): 文本内容；若传入字符串列表则表示多段落，将用换行符拼接
             timerange (`Timerange`): 片段在轨道上的时间范围
             font (`Font_type`, optional): 字体类型, 默认为系统字体
             style (`TextStyle`, optional): 字体样式, 包含大小/颜色/对齐/透明度等.
@@ -344,6 +344,13 @@ class TextSegment(VisualSegment):
             style_ranges (`List[Dict[str, Any]]`, optional): 逐字/富文本样式, 默认无样式
         """
         super().__init__(uuid.uuid4().hex, None, timerange, 1.0, 1.0, False, clip_settings=clip_settings)
+
+        if isinstance(text, list):
+            if not all(isinstance(item, str) for item in text):
+                raise TypeError("text must be str or List[str]")
+            text = "\n".join(text)
+        elif not isinstance(text, str):
+            raise TypeError("text must be str or List[str]")
 
         self.text = text
         self.font = font.value if font else None
@@ -357,7 +364,7 @@ class TextSegment(VisualSegment):
         self.effect = None
 
     @classmethod
-    def create_from_template(cls, text: str, timerange: Timerange, template: "TextSegment") -> "TextSegment":
+    def create_from_template(cls, text: Union[str, List[str]], timerange: Timerange, template: "TextSegment") -> "TextSegment":
         """根据模板创建新的文本片段, 并指定其文本内容"""
         new_segment = cls(text, timerange, style=deepcopy(template.style), clip_settings=deepcopy(template.clip_settings),
                           border=deepcopy(template.border), background=deepcopy(template.background),
