@@ -107,6 +107,7 @@ class ScriptMaterial:
             "audio_balances": [],
             "audio_effects": [effect.export_json() for effect in self.audio_effects],
             "audio_fades": [fade.export_json() for fade in self.audio_fades],
+            "audio_pitch_shifts": [],
             "audio_pannings": [],
             "audio_track_indexes": [],
             "audios": [audio.export_json() for audio in self.audios],
@@ -115,7 +116,6 @@ class ScriptMaterial:
             "chromas": [],
             "color_curves": [],
             "common_mask": self.common_masks,
-            "masks": self.masks,
             "digital_human_model_dressing": [],
             "digital_humans": [],
             "drafts": [],
@@ -150,6 +150,9 @@ class ScriptMaterial:
             "time_marks": [],
             "transitions": [transition.export_json() for transition in self.transitions],
             "video_effects": [effect.export_json() for effect in self.video_effects],
+            "video_radius": [],
+            "video_shadows": [],
+            "video_strokes": [],
             "video_trackings": [],
             "videos": [video.export_json() for video in self.videos],
             "vocal_beautifys": [],
@@ -844,15 +847,19 @@ class ScriptFile:
         self.content["fps"] = self.fps
         self.content["duration"] = self.duration
         self.content["config"]["maintrack_adsorb"] = self.maintrack_adsorb
+        include_background = False
         background = None
-        if isinstance(self.content.get("canvas_config"), dict):
+        if isinstance(self.content.get("canvas_config"), dict) and "background" in self.content["canvas_config"]:
+            include_background = True
             background = self.content["canvas_config"].get("background")
-        self.content["canvas_config"] = {
+        canvas_config = {
             "width": self.width,
             "height": self.height,
             "ratio": "original",
-            "background": background
         }
+        if include_background:
+            canvas_config["background"] = background
+        self.content["canvas_config"] = canvas_config
         self.content["materials"] = self.materials.export_json()
 
         # 合并导入的素材
@@ -883,3 +890,137 @@ class ScriptFile:
         if self.save_path is None:
             raise ValueError("没有设置保存路径, 可能不在模板模式下")
         self.dump(self.save_path)
+
+        # draft_meta_info.json：用于将媒体导入到剪映媒体库（不直接影响时间线轨道）
+        # 仅当同目录下存在 draft_meta_info.json 时进行同步，避免对单独的模板JSON写入额外文件。
+        meta_path = os.path.join(os.path.dirname(self.save_path), "draft_meta_info.json")
+        if os.path.exists(meta_path):
+            self._sync_draft_meta_info(meta_path)
+
+    @staticmethod
+    def _normalize_meta_file_path(path: str) -> str:
+        # Windows路径大小写不敏感；同时兼容反斜杠/斜杠差异
+        return os.path.normcase(os.path.normpath(path))
+
+    def _iter_media_for_meta_info(self) -> List[Dict[str, Any]]:
+        """从 draft_content.json 的 materials 中抽取可用于 draft_meta_info.json 的媒体信息"""
+        materials = self.content.get("materials", {})
+        items: List[Dict[str, Any]] = []
+
+        for video in materials.get("videos", []) or []:
+            if not isinstance(video, dict):
+                continue
+            path = video.get("path")
+            if not isinstance(path, str) or not path:
+                continue
+            media_type = video.get("type")
+            metetype = "photo" if media_type == "photo" else "video"
+            items.append({
+                "path": path,
+                "metetype": metetype,
+                "duration": int(video.get("duration", 0) or 0),
+                "width": int(video.get("width", 0) or 0),
+                "height": int(video.get("height", 0) or 0),
+            })
+
+        for audio in materials.get("audios", []) or []:
+            if not isinstance(audio, dict):
+                continue
+            path = audio.get("path")
+            if not isinstance(path, str) or not path:
+                continue
+            items.append({
+                "path": path,
+                "metetype": "music",
+                "duration": int(audio.get("duration", 0) or 0),
+                "width": 0,
+                "height": 0,
+            })
+
+        # 去重（按路径）
+        seen: set[str] = set()
+        deduped: List[Dict[str, Any]] = []
+        for item in items:
+            key = self._normalize_meta_file_path(item["path"])
+            if key in seen:
+                continue
+            seen.add(key)
+            deduped.append(item)
+        return deduped
+
+    def _sync_draft_meta_info(self, meta_path: str) -> None:
+        """将当前草稿中的媒体素材同步进 draft_meta_info.json 的 draft_materials(type=0).value"""
+        try:
+            with open(meta_path, "r", encoding="utf-8") as f:
+                meta_info = json.load(f)
+        except Exception:
+            # 文件损坏或为空时，回退到模板
+            with open(assets.get_asset_path("DRAFT_META_TEMPLATE"), "r", encoding="utf-8") as f:
+                meta_info = json.load(f)
+
+        if not isinstance(meta_info, dict):
+            with open(assets.get_asset_path("DRAFT_META_TEMPLATE"), "r", encoding="utf-8") as f:
+                meta_info = json.load(f)
+
+        draft_materials = meta_info.get("draft_materials")
+        if not isinstance(draft_materials, list):
+            draft_materials = []
+            meta_info["draft_materials"] = draft_materials
+
+        local_bucket = next(
+            (m for m in draft_materials if isinstance(m, dict) and m.get("type") == 0),
+            None,
+        )
+        if local_bucket is None:
+            local_bucket = {"type": 0, "value": []}
+            draft_materials.append(local_bucket)
+
+        if not isinstance(local_bucket.get("value"), list):
+            local_bucket["value"] = []
+        values: List[Dict[str, Any]] = local_bucket["value"]
+
+        existing_paths: set[str] = set()
+        for value in values:
+            if not isinstance(value, dict):
+                continue
+            p = value.get("file_Path")
+            if isinstance(p, str) and p:
+                existing_paths.add(self._normalize_meta_file_path(p))
+
+        for media in self._iter_media_for_meta_info():
+            path = media["path"]
+            key = self._normalize_meta_file_path(path)
+            if key in existing_paths:
+                continue
+
+            duration = int(media.get("duration", 0) or 0)
+            width = int(media.get("width", 0) or 0)
+            height = int(media.get("height", 0) or 0)
+            metetype = str(media.get("metetype", ""))
+
+            values.append({
+                "duration": duration,
+                "height": height,
+                "md5": "",
+                "metetype": metetype,
+                "type": 0,
+                "width": width,
+                "create_time": 0,
+                "extra_info": os.path.basename(path),
+                "file_Path": path,
+                "import_time": 0,
+                "import_time_ms": 0,
+                "item_source": 1,
+                "roughcut_time_range": {
+                    "duration": duration,
+                    "start": 0
+                },
+                "sub_time_range": {
+                    "duration": -1,
+                    "start": -1
+                }
+            })
+            existing_paths.add(key)
+
+        with open(meta_path, "w", encoding="utf-8") as f:
+            json.dump(meta_info, f, ensure_ascii=False, indent=4)
