@@ -1,26 +1,24 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
-    name="pyJianYingDraft",
-    version="0.2.5",
+    name="pyjianyingdraft",
+    version="0.2.6",
     author="aoguai",
     description="轻量、灵活、易上手的Python剪映草稿生成及导出工具，构建全自动化视频剪辑/混剪流水线",
     long_description=open("pypi_readme.md", "r", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
     url="https://github.com/aoguai/pyJianYingDraft",
-    packages=["pyJianYingDraft"],
-    package_data={
-        'pyJianYingDraft.assets': ['*.json']
-    },
+    packages=find_packages(exclude=["tools", "tools.*", "ignored", "ignored.*"]),
+    package_data={"pyJianYingDraft": ["assets/*.json"]},
     classifiers=[
         "Programming Language :: Python :: 3",
         "Development Status :: 4 - Beta",
-        "Topic :: Multimedia :: Video"
+        "Topic :: Multimedia :: Video",
     ],
-    python_requires='>=3.8',
+    python_requires=">=3.8",
     install_requires=[
         "pymediainfo",
         "imageio",
-        "uiautomation>=2; sys_platform == 'win32'"
+        "uiautomation>=2; sys_platform == 'win32'",
     ],
 )

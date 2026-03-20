@@ -1,13 +1,16 @@
 __pycache__
 ignored
+tools/
 
 build/
 dist/
 *.egg-info/
 
+CLAUDE.md
 .vscode/
 .idea/
 .DS_Store
 
 .venv/
 venv/
+新预设
