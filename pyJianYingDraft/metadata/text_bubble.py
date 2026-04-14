@@ -22,3 +22,11 @@ class TextBubbleType(EffectEnum):
         "fd30e58025020c156fca4a5c90daec2a",
         []
     )
+    会话102 = EffectMeta(
+        "会话102",
+        False,
+        "6838834518980301319",
+        "6838834518980301319",
+        "9ea8b99aa108fab5b458f097771d8950",
+        []
+    )

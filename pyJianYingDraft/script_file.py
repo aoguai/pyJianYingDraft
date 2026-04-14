@@ -842,8 +842,10 @@ class ScriptFile:
         print("文字气泡效果:")
         for effect in self.imported_materials["effects"]:
             if effect["type"] == "text_shape":
+                effect_id = effect.get("effect_id") or effect.get("third_resource_id", "")
+                resource_id = effect.get("resource_id") or effect.get("third_resource_id", "")
                 print("\tEffect id: %s ,Resource id: %s '%s'" %
-                      (effect["effect_id"], effect["resource_id"], effect.get("name", "")))
+                      (effect_id, resource_id, effect.get("name", "")))
 
         print("花字效果:")
         for effect in self.imported_materials["effects"]:

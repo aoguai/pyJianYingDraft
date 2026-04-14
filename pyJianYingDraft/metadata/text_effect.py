@@ -1,18 +1,18 @@
 """文本花字元数据"""
 
-from .effect_meta import EffectEnum, EffectMeta
+from .effect_meta import EffectEnum, EffectMeta, EffectParam
 
 
 class TextEffectType(EffectEnum):
     """文本花字枚举"""
-    
+
     潮酷红黑白错位立体花字 = EffectMeta(
         "潮酷红黑白错位立体花字",
         True,
         "6896138254819675406",
         "6896138254819675406",
         "6b9b1e5600cebc634a4401aad38823eb",
-        []
+        [],
     )
     复古红蓝撞色立体字 = EffectMeta(
         "复古红蓝撞色立体字",
@@ -20,7 +20,7 @@ class TextEffectType(EffectEnum):
         "6896137990788238599",
         "6896137990788238599",
         "0a4a32149613fe88f1aa983a43ca89d9",
-        []
+        [],
     )
     描边白蓝字体 = EffectMeta(
         "描边白蓝字体",
@@ -28,7 +28,7 @@ class TextEffectType(EffectEnum):
         "7387594122032385321",
         "7387594122032385321",
         "d876b95fcd9d2c24a101a0af1bb5d336",
-        []
+        [],
     )
     拼贴浅红 = EffectMeta(
         "拼贴浅红",
@@ -36,7 +36,7 @@ class TextEffectType(EffectEnum):
         "7360960769703398695",
         "7360960769703398695",
         "b305849556040a522292a6ae4ac00085",
-        []
+        [],
     )
     潮酷发光立体花字 = EffectMeta(
         "潮酷发光立体花字",
@@ -44,7 +44,7 @@ class TextEffectType(EffectEnum):
         "7160598356237012261",
         "7160598356237012261",
         "201908aad868243e846745a734977c45",
-        []
+        [],
     )
     低饱和渐变色描边花字 = EffectMeta(
         "低饱和渐变色描边花字",
@@ -52,7 +52,7 @@ class TextEffectType(EffectEnum):
         "7404007124960857371",
         "7404007124960857371",
         "40a042802880b9684846fa9e078d4efd",
-        []
+        [],
     )
     光芒万丈 = EffectMeta(
         "光芒万丈",
@@ -60,7 +60,7 @@ class TextEffectType(EffectEnum):
         "7269602984844102947",
         "7269602984844102947",
         "cceecec1481a0c8a345cebaa89da91a7",
-        []
+        [],
     )
     双十一_霓虹立体黄 = EffectMeta(
         "双十一-霓虹立体黄",
@@ -68,7 +68,7 @@ class TextEffectType(EffectEnum):
         "7296352415060626699",
         "7296352415060626699",
         "d2059a3fae16ef95142b3fb015ac12f1",
-        []
+        [],
     )
     国风花型红色花字 = EffectMeta(
         "国风花型红色花字",
@@ -76,7 +76,7 @@ class TextEffectType(EffectEnum):
         "7571014813199912254",
         "7571014813199912254",
         "2a523882ab60bfaa796ba29a1d77f61b",
-        []
+        [],
     )
     圆形背景红色立体花字 = EffectMeta(
         "圆形背景红色立体花字",
@@ -84,7 +84,7 @@ class TextEffectType(EffectEnum):
         "7564343847665552702",
         "7564343847665552702",
         "b9a85304109e604613c94a4b789f42d1",
-        []
+        [],
     )
     春节新年福字背景花字 = EffectMeta(
         "春节新年福字背景花字",
@@ -92,7 +92,7 @@ class TextEffectType(EffectEnum):
         "7404078955344448777",
         "7404078955344448777",
         "3eabac55f8bdf596add3dc3c6531168a",
-        []
+        [],
     )
     橙子 = EffectMeta(
         "橙子",
@@ -100,7 +100,7 @@ class TextEffectType(EffectEnum):
         "7263114818876476729",
         "7263114818876476729",
         "e17ffdd8b23139a7bfae8a9bc0b94d5c",
-        []
+        [],
     )
     立体花字 = EffectMeta(
         "立体花字",
@@ -108,7 +108,7 @@ class TextEffectType(EffectEnum):
         "7369126670915226899",
         "7369126670915226899",
         "4158b7cbd4c583290f2b588d7779a989",
-        []
+        [],
     )
     红金国风花字 = EffectMeta(
         "红金国风花字",
@@ -116,7 +116,7 @@ class TextEffectType(EffectEnum):
         "7507460201549843736",
         "7507460201549843736",
         "ec592757afb7fb571ad746700ef41a99",
-        []
+        [],
     )
     红金立体国风花字 = EffectMeta(
         "红金立体国风花字",
@@ -124,7 +124,7 @@ class TextEffectType(EffectEnum):
         "7548337425781935422",
         "7548337425781935422",
         "e65e9bc523cdeb69ad535ed4621192a6",
-        []
+        [],
     )
     花字 = EffectMeta(
         "花字",
@@ -132,7 +132,7 @@ class TextEffectType(EffectEnum):
         "7455608333563874585",
         "7455608333563874585",
         "0d80367299c16b5e939dd47bad863aac",
-        []
+        [],
     )
     金箔纹理阴影花字 = EffectMeta(
         "金箔纹理阴影花字",
@@ -140,7 +140,7 @@ class TextEffectType(EffectEnum):
         "7405530102324415807",
         "7405530102324415807",
         "4450c5418dbcdb57e037de113bd2949e",
-        []
+        [],
     )
     雪地字 = EffectMeta(
         "雪地字",
@@ -148,7 +148,7 @@ class TextEffectType(EffectEnum):
         "7568378458716491032",
         "7568378458716491032",
         "f9c9addbb6b81579b1ad5b6f83501a66",
-        []
+        [],
     )
     黄色发光花字 = EffectMeta(
         "黄色发光花字",
@@ -156,7 +156,7 @@ class TextEffectType(EffectEnum):
         "7404896582182767908",
         "7404896582182767908",
         "c61a29327a96e5d68f2115fa1959cecd",
-        []
+        [],
     )
     黄色渐变花字 = EffectMeta(
         "黄色渐变花字",
@@ -164,7 +164,7 @@ class TextEffectType(EffectEnum):
         "7439987370033728807",
         "7439987370033728807",
         "e9c34bba21d6bda40218a3a3f4eaab03",
-        []
+        [],
     )
     黑白线条花字 = EffectMeta(
         "黑白线条花字",
@@ -172,5 +172,61 @@ class TextEffectType(EffectEnum):
         "7404819849140063551",
         "7404819849140063551",
         "d43a5f4302fc3f3f2e21fef51b433ccc",
-        []
+        [],
+    )
+    黄色渐变立体发光花字 = EffectMeta(
+        "黄色渐变立体发光花字",
+        False,
+        "7371124431713832201",
+        "7371124431713832201",
+        "af0efa6f0284358550b636a711625cc9",
+        [],
+    )
+    粉色花字 = EffectMeta(
+        "粉色花字",
+        True,
+        "7127635273113932295",
+        "7127635273113932295",
+        "61d9cccce5fb93bf3b472d0dff5048e7",
+        [],
+    )
+    橙色立体花字 = EffectMeta(
+        "橙色立体花字",
+        False,
+        "6896143862222441735",
+        "6896143862222441735",
+        "a0e93d971000d859555cf3cdf4609178",
+        [],
+    )
+    综艺_黄色红边 = EffectMeta(
+        "综艺 黄色红边",
+        False,
+        "7127614731187211551",
+        "7127614731187211551",
+        "9fea20b07871584637840113dd25f341",
+        [],
+    )
+    彩色微立体花字 = EffectMeta(
+        "彩色微立体花字",
+        False,
+        "7405027108893756707",
+        "7405027108893756707",
+        "94afc9bec5181a1f517f692c2bac71a1",
+        [],
+    )
+    夏日蓝描边立体 = EffectMeta(
+        "夏日蓝描边立体",
+        False,
+        "7548102481977593113",
+        "7548102481977593113",
+        "adcacc9b01154fd07be8f027d53e739f",
+        [],
+    )
+    白色花字 = EffectMeta(
+        "白色花字",
+        False,
+        "7510996426575449368",
+        "7510996426575449368",
+        "7ddd6baa4d840a73d91d114713772634",
+        [],
     )

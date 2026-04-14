@@ -47,6 +47,8 @@ class TextLoopAnim(EffectEnum):
     频闪边框             = AnimationMeta("频闪边框", False, 0.500, "7308280718302384690", "32284883", "36184bd37eae10c2d8247fb5bd59c6f2")
     颤抖                 = AnimationMeta("颤抖", False, 0.500, "6764189482871689742", "1644509", "9d16d8998abe172511399c3158bddddd")
     颤抖_III             = AnimationMeta("颤抖 III", False, 0.500, "7070036604429013535", "1598082", "c6f744d4c3d208abf97a3af3afe9d356")
+    弹簧                 = AnimationMeta("弹簧", False, 0.840, "6884154692398486023", "1644312", "34d74f1bf451dac1a23158380a5be322")
+    波纹                 = AnimationMeta("波纹", False, 0.767, "7275663372148806203", "22223033", "612fdb64f7616f2d0c2996ae4dc5a885")
 
     # 付费特效
     加字符               = AnimationMeta("加字符", True, 0.800, "7441532971082846758", "93688629", "f9c72d34da0c6e7b2b4263a37892ae6c")
