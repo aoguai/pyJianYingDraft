@@ -96,11 +96,11 @@ class TextStyle:
 
         style = {
             "fill": {
-                "alpha": 1.0,
+                "alpha": float(self.alpha),
                 "content": {
                     "render_type": "solid",
                     "solid": {
-                        "alpha": 1.0,
+                        "alpha": float(self.alpha),
                         "color": list(self.color)
                     }
                 }
