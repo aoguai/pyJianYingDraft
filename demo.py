@@ -5,6 +5,11 @@ from pyJianYingDraft import IntroType, TransitionType, trange, tim
 
 # 设置草稿文件夹
 draft_folder = draft.DraftFolder(r"<你的草稿文件夹>")
+# 如果需要显式指定剪映 User Data 路径，可以改为：
+# draft_folder = draft.DraftFolder(
+#     r"<你的草稿文件夹>",
+#     user_data_path=r"<你的 User Data 文件夹>",
+# )
 
 tutorial_asset_dir = os.path.join(
     os.path.dirname(__file__), "readme_assets", "tutorial"
@@ -90,3 +95,20 @@ script.add_segment(text_segment)
 
 # 保存草稿
 script.save()
+
+# 如需把新草稿在首存后立即移入逻辑文件夹，可参考：
+# 创建顶层文件夹和嵌套文件夹
+# draft_folder.create_folder("示例文件夹")
+# draft_folder.create_folder("示例文件夹/嵌套")
+# 把名为 "demo" 的草稿移入逻辑文件夹
+# draft_folder.move_draft_to_folder("demo", "示例文件夹/嵌套")
+
+# 如需把草稿移回顶层视图，可参考：
+# draft_folder.move_draft_to_root("demo")
+
+# 删除逻辑文件夹。
+# `move_drafts_to_root` 会先把该子树中的草稿映射移回顶层，再删除整棵文件夹子树。
+# draft_folder.remove_folder("示例文件夹", on_non_empty="move_drafts_to_root")
+
+# 如果你确认要连同子树内草稿的物理目录一起删除，可改用：
+# draft_folder.remove_folder("示例文件夹", on_non_empty="delete_drafts")

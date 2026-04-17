@@ -2,9 +2,10 @@ import os
 import json
 import math
 import time
+import uuid
 from copy import deepcopy
 
-from typing import Optional, Literal, Union, overload
+from typing import Optional, Literal, Union, overload, Callable
 from typing import Type, Dict, List, Any
 
 from . import util
@@ -193,6 +194,10 @@ class ScriptFile:
     """导入的素材信息"""
     imported_tracks: List[ImportedTrack]
     """导入的轨道信息"""
+    _draft_registration_context: Optional[Dict[str, Any]]
+    """仅供 DraftFolder 注入的私有注册上下文"""
+    _post_save_hook: Optional[Callable[["ScriptFile"], None]]
+    """仅供 DraftFolder 注入的私有保存后钩子"""
 
     def __init__(self, width: int, height: int, fps: int, maintrack_adsorb: bool):
         """**创建剪映草稿推荐使用`DraftFolder.create_draft()`而非此方法**
@@ -216,6 +221,8 @@ class ScriptFile:
 
         self.imported_materials = {}
         self.imported_tracks = []
+        self._draft_registration_context = None
+        self._post_save_hook = None
 
         with open(assets.get_asset_path('DRAFT_CONTENT_TEMPLATE'), "r", encoding="utf-8") as f:
             self.content = json.load(f)
@@ -243,6 +250,8 @@ class ScriptFile:
 
         obj.imported_materials = deepcopy(obj.content["materials"])
         obj.imported_tracks = [import_track(track_data) for track_data in obj.content["tracks"]]
+        obj._draft_registration_context = None
+        obj._post_save_hook = None
 
         return obj
 
@@ -899,6 +908,7 @@ class ScriptFile:
         """
         if self.save_path is None:
             raise ValueError("没有设置保存路径, 可能不在模板模式下")
+        self._refresh_project_id_if_needed()
         self.dump(self.save_path)
 
         # draft_meta_info.json：用于将媒体导入到剪映媒体库（不直接影响时间线轨道）
@@ -906,6 +916,19 @@ class ScriptFile:
         meta_path = os.path.join(os.path.dirname(self.save_path), "draft_meta_info.json")
         if os.path.exists(meta_path):
             self._sync_draft_meta_info(meta_path)
+        if self._post_save_hook is not None:
+            self._post_save_hook(self)
+
+    def _refresh_project_id_if_needed(self) -> None:
+        """仅对 DraftFolder 注入的新草稿在首次保存前刷新顶层项目 ID。"""
+        context = self._draft_registration_context
+        if context is None:
+            return
+        if not context.get("refresh_project_id_on_first_save", False):
+            return
+
+        self.content["id"] = str(uuid.uuid4()).upper()
+        context["refresh_project_id_on_first_save"] = False
 
     @staticmethod
     def _normalize_meta_file_path(path: str) -> str:
