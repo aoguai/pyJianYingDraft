@@ -16,7 +16,8 @@ from .time_util import Timerange, tim, srt_tstamp
 from .local_materials import VideoMaterial, AudioMaterial
 from .segment import BaseSegment, Speed, ClipSettings
 from .audio_segment import AudioSegment, AudioFade, AudioEffect
-from .video_segment import VideoSegment, StickerSegment, SegmentAnimations, VideoEffect, Transition, Filter, BackgroundFilling, MixMode
+from .video_segment import VideoSegment, StickerSegment, SegmentAnimations, VideoEffect, FigureEffect
+from .video_segment import Transition, Filter, BackgroundFilling, MixMode
 from .effect_segment import EffectSegment, FilterSegment
 from .text_segment import TextSegment, TextStyle, TextBubble
 from .track import TrackType, BaseTrack, Track
@@ -54,6 +55,8 @@ class ScriptMaterial:
     """转场效果列表"""
     filters: List[Union[Filter, TextBubble]]
     """滤镜/文本花字/文本气泡列表, 导出到`effects`中"""
+    beauty_effects: List[FigureEffect]
+    """美颜美体效果列表, 导出到`effects`中"""
     mix_modes: List[MixMode]
     """混合模式列表, 导出到`effects`中"""
     canvases: List[BackgroundFilling]
@@ -75,6 +78,7 @@ class ScriptMaterial:
         self.masks = []
         self.transitions = []
         self.filters = []
+        self.beauty_effects = []
         self.mix_modes = []
         self.canvases = []
 
@@ -83,7 +87,7 @@ class ScriptMaterial:
     @overload
     def __contains__(self, item: Union[AudioFade, AudioEffect]) -> bool: ...
     @overload
-    def __contains__(self, item: Union[SegmentAnimations, VideoEffect, Transition, Filter]) -> bool: ...
+    def __contains__(self, item: Union[SegmentAnimations, VideoEffect, FigureEffect, Transition, Filter]) -> bool: ...
 
     def __contains__(self, item) -> bool:
         if isinstance(item, VideoMaterial):
@@ -98,6 +102,8 @@ class ScriptMaterial:
             return item.animation_id in [ani.animation_id for ani in self.animations]
         elif isinstance(item, VideoEffect):
             return item.global_id in [effect.global_id for effect in self.video_effects]
+        elif isinstance(item, FigureEffect):
+            return item.global_id in [effect.global_id for effect in self.beauty_effects]
         elif isinstance(item, Transition):
             return item.global_id in [transition.global_id for transition in self.transitions]
         elif isinstance(item, Filter):
@@ -125,7 +131,9 @@ class ScriptMaterial:
             "digital_human_model_dressing": [],
             "digital_humans": [],
             "drafts": [],
-            "effects": [_filter.export_json() for _filter in self.filters] + [mix_mode.export_json() for mix_mode in self.mix_modes],
+            "effects": [_filter.export_json() for _filter in self.filters] +
+                       [mix_mode.export_json() for mix_mode in self.mix_modes] +
+                       [effect.export_json() for effect in self.beauty_effects],
             "flowers": [],
             "green_screens": [],
             "handwrites": [],
@@ -350,6 +358,10 @@ class ScriptFile:
             for filter_ in segment.filters:
                 if filter_ not in self.materials:
                     self.materials.filters.append(filter_)
+            # 美颜美体
+            for beauty_effect in segment.beauty_effects:
+                if beauty_effect not in self.materials:
+                    self.materials.beauty_effects.append(beauty_effect)
             # 混合模式
             for mix_mode in segment.mix_modes:
                 self.materials.mix_modes.append(mix_mode)

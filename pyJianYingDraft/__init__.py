@@ -18,6 +18,7 @@ from .metadata import TextIntro, TextOutro, TextLoopAnim
 from .metadata import TextEffectType, TextBubbleType
 from .metadata import AudioSceneEffectType, ToneEffectType, SpeechToSongType
 from .metadata import VideoSceneEffectType, VideoCharacterEffectType
+from .metadata import BeautyType, SkinToneType
 
 from .track import TrackType
 from .template_mode import ShrinkMode, ExtendMode
@@ -182,6 +183,8 @@ Tone_effect_type = _DeprecatedEnum(ToneEffectType, "Tone_effect_type", "ToneEffe
 Speech_to_song_type = _DeprecatedEnum(SpeechToSongType, "Speech_to_song_type", "SpeechToSongType")
 Video_scene_effect_type = _DeprecatedEnum(VideoSceneEffectType, "Video_scene_effect_type", "VideoSceneEffectType")
 Video_character_effect_type = _DeprecatedEnum(VideoCharacterEffectType, "Video_character_effect_type", "VideoCharacterEffectType")
+Beauty_type = _DeprecatedEnum(BeautyType, "Beauty_type", "BeautyType")
+Skin_tone_type = _DeprecatedEnum(SkinToneType, "Skin_tone_type", "SkinToneType")
 Keyframe_property = _DeprecatedEnum(KeyframeProperty, "Keyframe_property", "KeyframeProperty")
 
 # 仅在Windows系统下定义jianying_controller相关的向后兼容类
@@ -214,6 +217,8 @@ __all__ = [
     "SpeechToSongType",
     "VideoSceneEffectType",
     "VideoCharacterEffectType",
+    "BeautyType",
+    "SkinToneType",
     "CropSettings",
     "VideoMaterial",
     "AudioMaterial",
@@ -262,6 +267,8 @@ __all__ = [
     "Speech_to_song_type",
     "Video_scene_effect_type",
     "Video_character_effect_type",
+    "Beauty_type",
+    "Skin_tone_type",
     "Clip_settings",
     "Text_style",
     "Text_border",

@@ -9,6 +9,7 @@ from .effect_meta import AnimationMeta
 # 视频特效
 from .video_scene_effect import VideoSceneEffectType
 from .video_character_effect import VideoCharacterEffectType
+from .beauty_meta import BeautyType, SkinToneType
 
 # 视频动画
 from .video_intro import IntroType
@@ -55,5 +56,7 @@ __all__ = [
     "ToneEffectType",
     "SpeechToSongType",
     "VideoSceneEffectType",
-    "VideoCharacterEffectType"
+    "VideoCharacterEffectType",
+    "BeautyType",
+    "SkinToneType"
 ]

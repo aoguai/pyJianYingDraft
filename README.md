@@ -517,6 +517,7 @@ script.add_segment(overlay_video, track_name="overlay")
 目前支持的**特效**类型由以下枚举类定义：
 - 音频：`AudioSceneEffectType`（场景音）
 - 视频：`VideoSceneEffectType`（画面特效）、`VideoCharacterEffectType`（人物特效）
+- 美颜：`BeautyType`（皮肤管理）、`SkinToneType`（肤色）
 
 目前支持的**动画**类型由以下枚举类定义：
 - 视频：`IntroType`（入场）, `OutroType`（出场）, `GroupAnimationType`（组合动画）
@@ -555,6 +556,19 @@ from pyJianYingDraft import FilterType
 
 video_segment1.add_filter(FilterType.原生肤, 10)  # 设置"原生肤"强度为10
 video_segment2.add_filter(FilterType.冰雪世界, 50)  # 设置"冰雪世界"强度为50
+```
+
+#### 添加片段美颜
+美颜美体效果使用`VideoSegment.add_beauty()`或`VideoSegment.set_skin_tone()`添加到视频片段上，强度参数范围为0~100。
+
+```python
+from pyJianYingDraft import BeautyType, SkinToneType
+
+video_segment.add_beauty(BeautyType.磨皮, 42)
+video_segment.add_beauty(BeautyType.美白, 31)
+video_segment.add_beauty(BeautyType.匀肤, 39)
+video_segment.add_beauty(BeautyType.清晰, 0)
+video_segment.set_skin_tone(SkinToneType.粉白, intensity=60)
 ```
 
 #### 独立轨道上的特效和滤镜

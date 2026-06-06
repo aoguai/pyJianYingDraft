@@ -3,6 +3,7 @@ import uuid
 import pymediainfo
 
 from typing import Optional, Literal
+from typing import List
 from typing import Dict, Any
 
 
@@ -98,6 +99,18 @@ class VideoMaterial:
     """素材裁剪设置"""
     material_type: Literal["video", "photo"]
     """素材类型: 视频或图片"""
+    beauty_face_auto_preset_infos: List[Dict[str, Any]]
+    """美颜自动预设识别信息"""
+    beauty_face_preset_infos: List[Dict[str, Any]]
+    """美颜手动预设识别信息"""
+    beauty_body_preset_id: str
+    """美体预设id"""
+    beauty_body_auto_preset: Optional[Dict[str, Any]]
+    """美体自动预设信息"""
+    beauty_face_auto_preset: Dict[str, Any]
+    """美颜自动预设信息"""
+    is_unified_beauty_mode: bool
+    """是否启用统一美颜模式"""
 
     def __init__(self, path: str, material_name: Optional[str] = None, crop_settings: CropSettings = CropSettings()):
         """从指定位置加载视频（或图片）素材
@@ -121,6 +134,12 @@ class VideoMaterial:
         self.path = path
         self.crop_settings = crop_settings
         self.local_material_id = ""
+        self.beauty_face_auto_preset_infos = []
+        self.beauty_face_preset_infos = []
+        self.beauty_body_preset_id = ""
+        self.beauty_body_auto_preset = None
+        self.beauty_face_auto_preset = self._default_beauty_face_auto_preset()
+        self.is_unified_beauty_mode = False
 
         if not pymediainfo.MediaInfo.can_parse():
             raise ValueError(f"不支持的视频素材类型 '{postfix}'")
@@ -157,9 +176,48 @@ class VideoMaterial:
         else:
             raise ValueError(f"输入的素材文件 {path} 没有视频轨道或图片轨道")
 
+    @staticmethod
+    def _default_beauty_face_auto_preset() -> Dict[str, str]:
+        return {
+            "name": "",
+            "preset_id": "",
+            "rate_map": "",
+            "scene": ""
+        }
+
+    @staticmethod
+    def _beauty_face_auto_preset_infos() -> List[Dict[str, Any]]:
+        return [{
+            "face_id": "0",
+            "preset_id": "",
+            "rate_map": "",
+            "resources_id_list": []
+        }]
+
+    @staticmethod
+    def _beauty_face_preset_infos() -> List[Dict[str, Any]]:
+        return [{
+            "face_id": "0",
+            "preset_id": "b25f28f1-66a5-4287-8fa2-9f0bad093ee8",
+            "rate_map": "{\"intensity\":100.0}",
+            "resources_id_list": []
+        }]
+
+    def enable_beauty_preset_infos(self) -> None:
+        """写入剪映识别美颜 figure 素材所需的视频素材侧 preset 信息"""
+        self.beauty_face_auto_preset_infos = self._beauty_face_auto_preset_infos()
+        self.beauty_face_preset_infos = self._beauty_face_preset_infos()
+
     def export_json(self) -> Dict[str, Any]:
         video_material_json = {
             "audio_fade": None,
+            "beauty_body_auto_preset": getattr(self, "beauty_body_auto_preset", None),
+            "beauty_body_preset_id": getattr(self, "beauty_body_preset_id", ""),
+            "beauty_face_auto_preset": getattr(
+                self, "beauty_face_auto_preset", self._default_beauty_face_auto_preset()
+            ),
+            "beauty_face_auto_preset_infos": getattr(self, "beauty_face_auto_preset_infos", []),
+            "beauty_face_preset_infos": getattr(self, "beauty_face_preset_infos", []),
             "category_id": "",
             "category_name": "local",
             "check_flag": 63487,
@@ -169,6 +227,7 @@ class VideoMaterial:
             "duration": self.duration,
             "height": self.height,
             "id": self.material_id,
+            "is_unified_beauty_mode": getattr(self, "is_unified_beauty_mode", False),
             "local_material_id": self.local_material_id,
             "material_id": self.material_id,
             "material_name": self.material_name,

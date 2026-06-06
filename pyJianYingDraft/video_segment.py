@@ -18,6 +18,7 @@ from .metadata import EffectMeta, EffectParamInstance
 from .metadata import MaskMeta, MaskType, FilterType, TransitionType
 from .metadata import IntroType, OutroType, GroupAnimationType
 from .metadata import VideoSceneEffectType, VideoCharacterEffectType
+from .metadata import BeautyType, SkinToneType
 from .metadata.mix_mode_meta import MixModeType
 
 class Mask:
@@ -176,6 +177,125 @@ class VideoEffect:
             "value": 1.0,
             "version": ""
             # 不导出path、request_id和algorithm_artifact_path字段
+        }
+
+class FigureEffect:
+    """美颜美体素材, 导出到 materials.effects 中的 figure 条目"""
+
+    global_id: str
+    """素材全局id, 由程序自动生成"""
+    effect_meta: EffectMeta
+    """美颜元数据"""
+    effect_type: Union[BeautyType, SkinToneType]
+    """美颜类型"""
+    value: float
+    """强度参数, 已转换为剪映 0.0~1.0 范围"""
+    cold_warm: float
+    """肤色冷暖参数, 已转换为剪映 -1.0~1.0 范围"""
+
+    def __init__(self, effect_type: Union[BeautyType, SkinToneType],
+                 value: float = 100.0, *, cold_warm: float = 0.0):
+        self.global_id = uuid.uuid4().hex
+        self.effect_type = effect_type
+        self.effect_meta = effect_type.value
+        self.value = self._normalize_percent(value, "value")
+        self.cold_warm = self._normalize_signed_percent(cold_warm, "cold_warm")
+
+    @staticmethod
+    def _normalize_percent(value: float, field_name: str) -> float:
+        if value < 0 or value > 100:
+            raise ValueError("%s 必须在 0~100 范围内" % field_name)
+        return value / 100.0
+
+    @staticmethod
+    def _normalize_signed_percent(value: float, field_name: str) -> float:
+        if value < -100 or value > 100:
+            raise ValueError("%s 必须在 -100~100 范围内" % field_name)
+        return value / 100.0
+
+    @staticmethod
+    def _export_simple_adjust_param(name: str, value: float) -> Dict[str, Any]:
+        return {
+            "default_value": 0.0,
+            "name": name,
+            "value": value
+        }
+
+    def export_json(self) -> Dict[str, Any]:
+        value_mode = getattr(self.effect_meta, "value_mode", "value")
+        adjust_params: List[Dict[str, Any]] = []
+        face_adjust_params: List[Dict[str, Any]] = []
+        value = self.value if value_mode == "value" else 0.0
+
+        if value_mode == "adjust_params":
+            adjust_params = [
+                self._export_simple_adjust_param(
+                    getattr(self.effect_meta, "adjust_param_name", "0"),
+                    self.value
+                )
+            ]
+        elif value_mode == "face_adjust_params":
+            face_adjust_params = [{
+                "adjust_params": [
+                    self._export_simple_adjust_param(
+                        getattr(self.effect_meta, "cold_warm_param_name", "face_adjust_skin_ColdWarm"),
+                        self.cold_warm
+                    ),
+                    self._export_simple_adjust_param(
+                        getattr(self.effect_meta, "intensity_param_name", "face_adjust_skin_Intensity"),
+                        self.value
+                    )
+                ],
+                "disable_part": [],
+                "enable": True,
+                "face_id": "-1"
+            }]
+
+        return {
+            "adjust_params": adjust_params,
+            "apply_target_type": 0,
+            "beauty_body_auto_preset_id": "",
+            "beauty_face_auto_preset_id": "",
+            "beauty_face_auto_retouch_info": {
+                "beauty_face_auto_retouch_id": "",
+                "face_id": []
+            },
+            "bloom_params": None,
+            "category_id": getattr(self.effect_meta, "category_id", ""),
+            "category_key": "",
+            "category_name": "",
+            "color_match_info": {
+                "source_feature_path": "",
+                "target_feature_path": "",
+                "target_image_path": ""
+            },
+            "covering_relation_change": 0,
+            "effect_id": self.effect_meta.effect_id,
+            "enable_skin_tone_correction": False,
+            "exclusion_group": [],
+            "face_adjust_params": face_adjust_params,
+            "formula_id": "",
+            "id": self.global_id,
+            "intensity_key": getattr(self.effect_meta, "intensity_key", ""),
+            "item_effect_type": 21,
+            "multi_language_current": "",
+            "name": self.effect_meta.name,
+            "panel_id": "",
+            "platform": "all",
+            "report_name": "",
+            "resource_id": self.effect_meta.resource_id,
+            "smart_color_mode": 0,
+            "source_platform": 1,
+            "sub_category_id": "",
+            "sub_category_name": "",
+            "sub_type": getattr(self.effect_meta, "sub_type", "none"),
+            "third_resource_id": getattr(self.effect_meta, "third_resource_id", ""),
+            "time_range": None,
+            "type": "figure",
+            "value": value,
+            "version": "",
+            "visible": True
+            # 不导出 path、request_id、algorithm_artifact_path、lumi_hub_path
         }
 
 class Filter:
@@ -368,6 +488,11 @@ class VideoSegment(VisualSegment):
 
     在放入轨道时自动添加到素材列表中
     """
+    beauty_effects: List[FigureEffect]
+    """美颜美体效果列表
+
+    在放入轨道时自动添加到素材列表中
+    """
     mix_modes: List[MixMode]
     """混合模式列表
 
@@ -436,6 +561,7 @@ class VideoSegment(VisualSegment):
         self.material_size = (material.width, material.height)
         self.effects = []
         self.filters = []
+        self.beauty_effects = []
         self.mix_modes = []
         self.transition = None
         self.mask = None
@@ -525,6 +651,50 @@ class VideoSegment(VisualSegment):
         filter_inst = Filter(filter_type.value, intensity / 100.0)  # 转化为0~1范围
         self.filters.append(filter_inst)
         self.extra_material_refs.append(filter_inst.global_id)
+
+        return self
+
+    def add_beauty(self, effect_type: BeautyType, value: float = 100.0, *,
+                   cold_warm: float = 0.0) -> "VideoSegment":
+        """为视频片段添加一个美颜效果
+
+        Args:
+            effect_type (`BeautyType`): 美颜效果类型.
+            value (`float`, optional): 强度, 取值范围0~100.
+            cold_warm (`float`, optional): 冷暖, 取值范围-100~100. 仅部分肤色类效果使用.
+        """
+        if not isinstance(effect_type, BeautyType):
+            raise TypeError("effect_type 必须是 BeautyType")
+
+        effect_inst = FigureEffect(effect_type, value, cold_warm=cold_warm)
+        self.beauty_effects.append(effect_inst)
+        self.extra_material_refs.append(effect_inst.global_id)
+        self.material_instance.enable_beauty_preset_infos()
+
+        return self
+
+    def set_skin_tone(self, skin_tone_type: SkinToneType, intensity: float = 100.0, *,
+                      cold_warm: float = 0.0) -> "VideoSegment":
+        """为视频片段设置肤色效果
+
+        Args:
+            skin_tone_type (`SkinToneType`): 肤色类型.
+            intensity (`float`, optional): 程度, 取值范围0~100.
+            cold_warm (`float`, optional): 冷暖, 取值范围-100~100.
+        """
+        if not isinstance(skin_tone_type, SkinToneType):
+            raise TypeError("skin_tone_type 必须是 SkinToneType")
+
+        for effect in list(self.beauty_effects):
+            if isinstance(effect.effect_type, SkinToneType):
+                self.beauty_effects.remove(effect)
+                if effect.global_id in self.extra_material_refs:
+                    self.extra_material_refs.remove(effect.global_id)
+
+        effect_inst = FigureEffect(skin_tone_type, intensity, cold_warm=cold_warm)
+        self.beauty_effects.append(effect_inst)
+        self.extra_material_refs.append(effect_inst.global_id)
+        self.material_instance.enable_beauty_preset_infos()
 
         return self
 
