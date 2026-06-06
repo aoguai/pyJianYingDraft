@@ -15,6 +15,7 @@ exclude *.lnk
 recursive-exclude tools *
 recursive-exclude readme_assets *
 recursive-exclude ignored *
+prune tests
 global-exclude *.pyc
 global-exclude *.pyo
 global-exclude *.pyd
