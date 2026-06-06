@@ -5,7 +5,6 @@ class ToneEffectType(EffectEnum):
     """剪映自带的音频“音色”效果类型"""
 
     # 免费
-    台湾小哥    = EffectMeta("台湾小哥", False, "7255565276819755576", "18149602", "8dd8889045e6c065177df791ddb3dfb8", [])
     圣诞精灵    = EffectMeta("圣诞精灵", False, "7310059412062736946", "33214695", "8dd8889045e6c065177df791ddb3dfb8", [])
     圣诞老人    = EffectMeta("圣诞老人", False, "7310059178133819930", "33214489", "8dd8889045e6c065177df791ddb3dfb8", [])
     广告男声    = EffectMeta("广告男声", False, "7328088579811316263", "42060748", "f554735f65a98cc4da17a1c53ef6a886", [])
@@ -62,7 +61,41 @@ class ToneEffectType(EffectEnum):
 
 
     # 付费
-    TVB女声     = EffectMeta("TVB女声", True, "7260024060417937978", "19186454", "8dd8889045e6c065177df791ddb3dfb8", [])
+    台湾小哥    = EffectMeta("台湾小哥", True, "7255565276819755576", "18149602", "8dd8889045e6c065177df791ddb3dfb8", [
+                                    EffectParam.extra("speaker_id", "zh_male_taiwan"),
+                                    EffectParam.extra("vc_type", "speech"),
+                                    EffectParam.extra("source_platform", 1),
+                                    EffectParam.extra("third_resource_id", "7255565276819755576")])
+    热情甜妹    = EffectMeta("热情甜妹", True, "7582867547742145843", "7582867547742145843", "", [
+                                    EffectParam.extra("speaker_id", "VC_zh_female_zhanglaoban"),
+                                    EffectParam.extra("vc_type", "speech"),
+                                    EffectParam.extra("source_platform", 1),
+                                    EffectParam.extra("third_resource_id", "0")])
+    曼波讲故事  = EffectMeta("曼波讲故事", True, "7517562443405544740", "7517562443405544740", "f554735f65a98cc4da17a1c53ef6a886", [
+                                    EffectParam.extra("speaker_id", "VC_zh_male_manbo"),
+                                    EffectParam.extra("vc_type", "speech"),
+                                    EffectParam.extra("source_platform", 1),
+                                    EffectParam.extra("third_resource_id", "0")])
+    TVB女声     = EffectMeta("TVB女声", True, "7260024060417937978", "19186454", "8dd8889045e6c065177df791ddb3dfb8", [
+                                    EffectParam.extra("speaker_id", "zh_female_tvb"),
+                                    EffectParam.extra("vc_type", "speech"),
+                                    EffectParam.extra("source_platform", 1),
+                                    EffectParam.extra("third_resource_id", "7260024060417937978")])
+    娱乐扒妹II  = EffectMeta("娱乐扒妹II", True, "7517556872564477195", "7517556872564477195", "f554735f65a98cc4da17a1c53ef6a886", [
+                                    EffectParam.extra("speaker_id", "VC_zh_female_bameiII"),
+                                    EffectParam.extra("vc_type", "speech"),
+                                    EffectParam.extra("source_platform", 1),
+                                    EffectParam.extra("third_resource_id", "0")])
+    台湾女生    = EffectMeta("台湾女生", True, "7550588076523785518", "7550588076523785518", "f554735f65a98cc4da17a1c53ef6a886", [
+                                    EffectParam.extra("speaker_id", "VC_zh_female_taiwannv"),
+                                    EffectParam.extra("vc_type", "speech"),
+                                    EffectParam.extra("source_platform", 1),
+                                    EffectParam.extra("third_resource_id", "0")])
+    直率英子    = EffectMeta("直率英子", True, "7369177370873303587", "7369177370873303587", "f554735f65a98cc4da17a1c53ef6a886", [
+                                    EffectParam.extra("speaker_id", "zh_female_naying"),
+                                    EffectParam.extra("vc_type", "speech"),
+                                    EffectParam.extra("source_platform", 1),
+                                    EffectParam.extra("third_resource_id", "7369177370873303587")])
     东厂公公    = EffectMeta("东厂公公", True, "7328092524612948491", "42060742", "f554735f65a98cc4da17a1c53ef6a886", [])
     云龙哥      = EffectMeta("云龙哥", True, "7376558114830553612", "68856989", "f554735f65a98cc4da17a1c53ef6a886", [])
     侠客        = EffectMeta("侠客", True, "7328089134331859468", "42060738", "f554735f65a98cc4da17a1c53ef6a886", [])
@@ -91,27 +124,16 @@ class ToneEffectType(EffectEnum):
     武则天      = EffectMeta("武则天", True, "7328088300474864167", "42060744", "f554735f65a98cc4da17a1c53ef6a886", [])
     沉稳解说    = EffectMeta("沉稳解说", True, "7367676791164506636", "63231110", "f554735f65a98cc4da17a1c53ef6a886", [])
     温柔姐姐    = EffectMeta("温柔姐姐", True, "7379565769190806079", "70562785", "f554735f65a98cc4da17a1c53ef6a886", [])
-    熊二        = EffectMeta("熊二", True, "7250403222798471740", "16627311", "8dd8889045e6c065177df791ddb3dfb8", [])
-    猴哥        = EffectMeta(
-                    "猴哥",
-                    True,
-                    "7532395986618946102",
-                    "14477015",
-                    "4f6a1fbc0000e178c724d355efea1d9f",
-                    [
-                        EffectParam.extra("category_id", "remen"),
-                        EffectParam.extra("category_name", "热门"),
-                        EffectParam.extra("speaker_id", "zh_male_sunwukong"),
-                        EffectParam.extra("vc_type", "speech"),
-                        EffectParam.extra("source_platform", 1),
-                        EffectParam.extra("third_resource_id", "7532395986618946102"),
-                        EffectParam.extra(
-                            "production_path",
-                            "##_presetpath_placeholder_0E685133-18CE-45ED-8CB8-2904A212EC80_##/Resources/1e448b3ec45ae3be87e9dcc4926da31d.mp3",
-                        ),
-                        EffectParam.extra("is_vc_clone_tone", False),
-                    ],
-                )
+    熊二        = EffectMeta("熊二", True, "7250403222798471740", "16627311", "8dd8889045e6c065177df791ddb3dfb8", [
+                                    EffectParam.extra("speaker_id", "zh_male_xionger"),
+                                    EffectParam.extra("vc_type", "speech"),
+                                    EffectParam.extra("source_platform", 1),
+                                    EffectParam.extra("third_resource_id", "7250403222798471740")])
+    猴哥        = EffectMeta("猴哥", True, "7532395986618946102", "14477015", "4f6a1fbc0000e178c724d355efea1d9f", [
+                                    EffectParam.extra("speaker_id", "zh_male_sunwukong"),
+                                    EffectParam.extra("vc_type", "speech"),
+                                    EffectParam.extra("source_platform", 1),
+                                    EffectParam.extra("third_resource_id", "7532395986618946102")])
     甜美悦悦    = EffectMeta("甜美悦悦", True, "7325710673978069530", "40932253", "f554735f65a98cc4da17a1c53ef6a886", [])
     生活小妙招  = EffectMeta("生活小妙招", True, "7328092409525441065", "42060737", "f554735f65a98cc4da17a1c53ef6a886", [])
     电竞解说    = EffectMeta("电竞解说", True, "7325711893551649330", "40933559", "f554735f65a98cc4da17a1c53ef6a886", [])
