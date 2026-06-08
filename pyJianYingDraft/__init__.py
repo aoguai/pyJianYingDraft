@@ -24,6 +24,15 @@ from .track import TrackType
 from .template_mode import ShrinkMode, ExtendMode
 from .script_file import ScriptFile
 from .draft_folder import DraftFolder
+from .draft_crypto import (
+    DraftCryptoError,
+    DraftCryptoProcessError,
+    JianyingDraftCrypto,
+    decrypt_draft_bytes,
+    decrypt_draft_file,
+    encrypt_draft_bytes,
+    encrypt_draft_file,
+)
 
 # 仅在Windows系统下导入jianying_controller
 ISWIN = (sys.platform == 'win32')
@@ -240,6 +249,13 @@ __all__ = [
     "ExtendMode",
     "ScriptFile",
     "DraftFolder",
+    "DraftCryptoError",
+    "DraftCryptoProcessError",
+    "JianyingDraftCrypto",
+    "decrypt_draft_bytes",
+    "decrypt_draft_file",
+    "encrypt_draft_bytes",
+    "encrypt_draft_file",
     "SEC",
     "tim",
     "trange",
