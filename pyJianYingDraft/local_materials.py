@@ -7,6 +7,10 @@ from typing import List
 from typing import Dict, Any
 
 
+DEFAULT_VIDEO_CHECK_FLAG = 63487
+BEAUTY_ENABLED_CHECK_FLAG_MASK = 0x01000000
+
+
 def _coerce_numeric(value: object, *, field_name: str) -> float:
     """将 MediaInfo 返回的数值字段统一转换为 float"""
     if value is None:
@@ -85,6 +89,8 @@ class VideoMaterial:
     """素材全局id, 自动生成"""
     local_material_id: str
     """素材本地id, 意义暂不明确"""
+    check_flag: int
+    """剪映素材检查标志位"""
     material_name: str
     """素材名称"""
     path: str
@@ -134,6 +140,7 @@ class VideoMaterial:
         self.path = path
         self.crop_settings = crop_settings
         self.local_material_id = ""
+        self.check_flag = DEFAULT_VIDEO_CHECK_FLAG
         self.beauty_face_auto_preset_infos = []
         self.beauty_face_preset_infos = []
         self.beauty_body_preset_id = ""
@@ -207,6 +214,7 @@ class VideoMaterial:
         """写入剪映识别美颜 figure 素材所需的视频素材侧 preset 信息"""
         self.beauty_face_auto_preset_infos = self._beauty_face_auto_preset_infos()
         self.beauty_face_preset_infos = self._beauty_face_preset_infos()
+        self.check_flag |= BEAUTY_ENABLED_CHECK_FLAG_MASK
 
     def export_json(self) -> Dict[str, Any]:
         video_material_json = {
@@ -220,7 +228,7 @@ class VideoMaterial:
             "beauty_face_preset_infos": getattr(self, "beauty_face_preset_infos", []),
             "category_id": "",
             "category_name": "local",
-            "check_flag": 63487,
+            "check_flag": getattr(self, "check_flag", DEFAULT_VIDEO_CHECK_FLAG),
             "crop": self.crop_settings.export_json(),
             "crop_ratio": "free",
             "crop_scale": 1.0,
