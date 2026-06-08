@@ -11,11 +11,11 @@
 > 标注☑️的特性**已实现**，标注⬜的特性**待实现**
 
 ### 模板模式
-> ⚠️ 剪映6+版本对`draft_content.json`文件进行了加密，故**本系列功能目前仅支持剪映5.9及以下版本**
+> ⚠️ 剪映高版本普通草稿会加密`draft_content.json`和`draft_meta_info.json`。明文模板仍可直接使用；加密草稿需要Windows 64位Python、本机已安装剪映，并配置`JY_INSTALL_DIR`或`DraftCryptoConfig(jy_install_dir=...)`。
 
-> ℹ 欢迎为本项目补充6+版本草稿文件的解密方式
+> ℹ 加密支持通过本机剪映`videoeditor.dll`完成，项目不分发剪映DLL，也不保证覆盖所有剪映版本。
 
-- ☑️ [加载](#加载模板)（未加密的）`draft_content.json`文件作为模板
+- ☑️ [加载](#加载模板)`draft_content.json`文件作为模板（明文直接读取；加密文件在配置本机crypto环境后自动解密）
 - ☑️ [替换音视频片段的素材](#根据名称替换素材)
 - ☑️ [修改文本片段的文本内容](#替换文本片段的内容)
 - ☑️ [将模板草稿中的音视频/文本轨道整体导入到另一草稿中](#导入模板草稿中的轨道)
@@ -70,7 +70,7 @@ pip install pyJianYingDraft
 
 ### 跨平台兼容性
 - **Windows**：支持包括草稿生成、模板模式和自动导出在内的所有功能（具体可能受到剪映版本限制）
-- **Linux/MacOS**：支持草稿生成和模板模式，但**不支持自动导出**，且注意**生成的草稿仍然需要在Windows版剪映下导出**。
+- **Linux/MacOS**：支持草稿生成和明文模板模式，但**不支持自动导出**，且注意**生成的草稿仍然需要在Windows版剪映下导出**。高版本加密草稿的自动解密/回加密仅支持Windows本机剪映环境。
 <!-- PYPI:END -->
 
 # 快速上手
@@ -99,7 +99,7 @@ pip install pyJianYingDraft
 
 除此之外，对于某些没有特定名称的特性（贴纸、花字等），提供了[提取素材元数据](#提取素材元数据)的功能以提取其`resource_id`
 
-> ⚠️ 由于剪映6+版本对草稿文件进行了加密，故**暂不支持加载来自6+版本的草稿文件**作为模板
+> ⚠️ 如果模板草稿来自高版本剪映且JSON文件已加密，请先在本机配置`JY_INSTALL_DIR`环境变量，或在代码中传入`DraftCryptoConfig`。未配置时只能加载明文模板。
 
 > ℹ 若出现模板内容丢失的情况，欢迎反馈
 
@@ -115,6 +115,24 @@ script = draft_folder.duplicate_as_template("模板草稿", "新草稿")  # 复�
 # 对返回的ScriptFile对象进行编辑，如替换素材、添加轨道、片段等
 
 script.save()  # 保存你的"新草稿"
+```
+
+若草稿来自高版本剪映且`draft_content.json`/`draft_meta_info.json`已加密，可以配置本机剪映安装目录。加载时会先尝试按明文JSON解析；解析失败后自动解密。保存时会保留来源文件的明文/密文状态，并在回加密前做roundtrip校验。
+
+```python
+import pyJianYingDraft as draft
+
+crypto = draft.DraftCryptoConfig(jy_install_dir=r"C:\Program Files\JianyingPro\Apps\XXX")
+draft_folder = draft.DraftFolder("<剪映草稿文件夹>", crypto_config=crypto)
+
+script = draft_folder.duplicate_as_template("高版本模板草稿", "新草稿")
+script.save()  # 若来源为加密草稿，将自动回写为加密JSON
+```
+
+也可以设置环境变量，避免在代码中传路径：
+
+```powershell
+$env:JY_INSTALL_DIR = "C:\Program Files\JianyingPro\Apps\XXX"
 ```
 
 为了最大限度地兼容模板中的复杂特性，**导入的轨道与pyJianYingDraft创建的轨道是分离开的**，具体地讲：
@@ -702,3 +720,13 @@ script.import_srt("subtitle.srt", track_name="subtitle", style_reference=seg1)  
 # 默认不会采用`style_reference`片段中的`clip_settings`设置，如果需要的话请显式传入`clip_settings=None`
 script.import_srt("subtitle.srt", track_name="subtitle", style_reference=seg1, clip_settings=None)  # 相当于clip_settings=seg1.clip_settings
 ```
+
+## 许可证
+
+本项目按 Apache License 2.0 开源，具体许可条款请见本仓库 [LICENSE](LICENSE) 文件。
+
+### 致谢
+
+- [wenshui330/jy-draftc](https://github.com/wenshui330/jy-draftc)：提供剪映高版本草稿 JSON 加解密方案参考并移植自此项目。
+    原项目说明其适用于使用 `jianying_draft_encrypt_v2` 加密方案的剪映 Windows 端草稿，明确验证范围为剪映 `10.3.0` 到 `10.6.5`；其他版本未验证。
+    因此，本项目的加密草稿支持也应按该范围谨慎使用，不保证覆盖所有剪映版本。

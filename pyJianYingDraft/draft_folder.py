@@ -10,6 +10,13 @@ from datetime import datetime
 from typing import Dict, List, Literal, Optional, Set, Tuple
 
 from . import assets
+from .draft_codec import (
+    DraftJsonState,
+    load_draft_json_object,
+    plain_json_state,
+    write_draft_json_object,
+)
+from .draft_crypto import DraftCryptoConfig
 from .script_file import ScriptFile
 
 
@@ -22,21 +29,35 @@ class DraftFolder:
     user_data_path: Optional[str]
     """剪映 User Data 路径"""
 
-    def __init__(self, folder_path: str, user_data_path: Optional[str] = None):
+    crypto_config: DraftCryptoConfig
+    """加密草稿 JSON 的本地读写配置"""
+
+    def __init__(
+        self,
+        folder_path: str,
+        user_data_path: Optional[str] = None,
+        *,
+        crypto_config: Optional[DraftCryptoConfig] = None,
+    ):
         """初始化草稿文件夹管理器
 
         Args:
             folder_path (`str`): 包含若干草稿的文件夹, 一般取剪映保存草稿的位置即可
             user_data_path (`Optional[str]`, optional): 剪映 `User Data` 根目录. 不传则在需要时自动定位.
+            crypto_config (`DraftCryptoConfig`, optional): 高版本加密草稿 JSON 的本地读写配置.
 
         Raises:
             `FileNotFoundError`: 路径不存在
         """
         self.folder_path = folder_path
         self.user_data_path = user_data_path
+        self.crypto_config = crypto_config if crypto_config is not None else DraftCryptoConfig()
 
         if not os.path.exists(self.folder_path):
             raise FileNotFoundError(f"根文件夹 {self.folder_path} 不存在")
+
+    def _resolve_crypto_config(self, crypto_config: Optional[DraftCryptoConfig]) -> DraftCryptoConfig:
+        return crypto_config if crypto_config is not None else self.crypto_config
 
     def list_drafts(self) -> List[str]:
         """列出文件夹中所有草稿的名称
@@ -202,7 +223,8 @@ class DraftFolder:
 
     def create_draft(self, draft_name: str, width: int, height: int, fps: int = 30, *,
                      maintrack_adsorb: bool = True,
-                     allow_replace: bool = False) -> ScriptFile:
+                     allow_replace: bool = False,
+                     crypto_config: Optional[DraftCryptoConfig] = None) -> ScriptFile:
         """创建一个新草稿并开始编辑, 编辑完成后使用`ScriptFile.save()`保存即可
 
         Args:
@@ -212,6 +234,7 @@ class DraftFolder:
             fps (`int`, optional): 视频帧率. 默认为30.
             maintrack_adsorb (`bool`, optional): 是否启用主轨道吸附（主轨磁吸）. 默认启用.
             allow_replace (`bool`, optional): 是否允许覆盖与`draft_name`重名的草稿. 默认为否.
+            crypto_config (`DraftCryptoConfig`, optional): 保存加密草稿 JSON 时使用的本地配置.
 
         Raises:
             `FileExistsError`: 已存在与`draft_name`重名的草稿, 但不允许覆盖.
@@ -229,6 +252,7 @@ class DraftFolder:
         # 创建草稿文件
         script_file = ScriptFile(width, height, fps, maintrack_adsorb)
         script_file.save_path = os.path.join(draft_path, "draft_content.json")
+        script_file._draft_crypto_config = self._resolve_crypto_config(crypto_config)
 
         return self._configure_script_file_registration(script_file, draft_name, is_new_draft=True)
 
@@ -248,11 +272,17 @@ class DraftFolder:
         script_file = self.load_template(draft_name)
         script_file.inspect_material()
 
-    def load_template(self, draft_name: str) -> ScriptFile:
+    def load_template(
+        self,
+        draft_name: str,
+        *,
+        crypto_config: Optional[DraftCryptoConfig] = None,
+    ) -> ScriptFile:
         """在文件夹中打开一个草稿作为模板, 并在其上进行编辑
 
         Args:
             draft_name (`str`): 草稿名称, 即相应文件夹名称
+            crypto_config (`DraftCryptoConfig`, optional): 加密草稿 JSON 的本地读写配置.
 
         Returns:
             `ScriptFile`: 以模板模式打开的草稿对象
@@ -264,16 +294,27 @@ class DraftFolder:
         if not os.path.exists(draft_path):
             raise FileNotFoundError(f"草稿文件夹 {draft_name} 不存在")
 
-        script_file = ScriptFile.load_template(os.path.join(draft_path, "draft_content.json"))
+        script_file = ScriptFile.load_template(
+            os.path.join(draft_path, "draft_content.json"),
+            crypto_config=self._resolve_crypto_config(crypto_config),
+        )
         return self._configure_script_file_registration(script_file, draft_name, is_new_draft=False)
 
-    def duplicate_as_template(self, template_name: str, new_draft_name: str, allow_replace: bool = False) -> ScriptFile:
+    def duplicate_as_template(
+        self,
+        template_name: str,
+        new_draft_name: str,
+        allow_replace: bool = False,
+        *,
+        crypto_config: Optional[DraftCryptoConfig] = None,
+    ) -> ScriptFile:
         """复制一份给定的草稿, 并在复制出的新草稿上进行编辑
 
         Args:
             template_name (`str`): 原草稿名称
             new_draft_name (`str`): 新草稿名称
             allow_replace (`bool`, optional): 是否允许覆盖与`new_draft_name`重名的草稿. 默认为否.
+            crypto_config (`DraftCryptoConfig`, optional): 加密草稿 JSON 的本地读写配置.
 
         Returns:
             `ScriptFile`: 以模板模式打开的**复制后的**草稿对象
@@ -297,7 +338,10 @@ class DraftFolder:
         shutil.copytree(template_path, new_draft_path, dirs_exist_ok=allow_replace)
 
         # 打开草稿
-        script_file = ScriptFile.load_template(os.path.join(new_draft_path, "draft_content.json"))
+        script_file = ScriptFile.load_template(
+            os.path.join(new_draft_path, "draft_content.json"),
+            crypto_config=self._resolve_crypto_config(crypto_config),
+        )
         return self._configure_script_file_registration(script_file, new_draft_name, is_new_draft=True)
 
     def _configure_script_file_registration(
@@ -333,13 +377,14 @@ class DraftFolder:
         draft_name = str(context.get("draft_name") or os.path.basename(draft_path))
         draft_root_path = str(context.get("draft_root_path") or os.path.abspath(self.folder_path))
         draft_meta_path = os.path.join(draft_path, "draft_meta_info.json")
+        crypto_config = getattr(script_file, "_draft_crypto_config", self.crypto_config)
         now_us = self._current_timestamp_us()
 
         root_meta_payload = self._read_root_meta_payload()
         root_entries = root_meta_payload["all_draft_store"]
         existing_entry_for_path = self._find_root_meta_entry(root_entries, draft_path)
 
-        meta_info = self._read_draft_meta_info(draft_meta_path)
+        meta_info, meta_state = self._read_draft_meta_info(draft_meta_path, crypto_config=crypto_config)
         draft_id = self._coerce_str(context.get("draft_id"))
         if not draft_id:
             if context.get("allow_generate_draft_id", False):
@@ -390,6 +435,7 @@ class DraftFolder:
         self._sync_registered_draft_meta_info(
             draft_meta_path,
             meta_info=meta_info,
+            meta_state=meta_state,
             draft_name=draft_name,
             draft_path=draft_path,
             draft_root_path=draft_root_path,
@@ -399,6 +445,7 @@ class DraftFolder:
             tm_draft_modified=tm_draft_modified,
             tm_duration=tm_duration,
             timeline_materials_size=timeline_materials_size,
+            crypto_config=crypto_config,
         )
 
         root_entry = self._build_root_meta_entry(
@@ -429,16 +476,24 @@ class DraftFolder:
             return payload
         return {"all_draft_store": []}
 
-    def _read_draft_meta_info(self, meta_path: str) -> Dict[str, object]:
+    def _read_draft_meta_info(
+        self,
+        meta_path: str,
+        *,
+        crypto_config: Optional[DraftCryptoConfig] = None,
+    ) -> Tuple[Dict[str, object], DraftJsonState]:
+        config = self._resolve_crypto_config(crypto_config)
         if os.path.exists(meta_path):
-            return self._read_json_object(meta_path)
-        return self._read_json_object(str(assets.get_asset_path("DRAFT_META_TEMPLATE")))
+            return load_draft_json_object(meta_path, crypto_config=config)
+        meta_info = self._read_json_object(str(assets.get_asset_path("DRAFT_META_TEMPLATE")))
+        return meta_info, plain_json_state(meta_path, crypto_config=config)
 
     def _sync_registered_draft_meta_info(
         self,
         meta_path: str,
         *,
         meta_info: Dict[str, object],
+        meta_state: DraftJsonState,
         draft_name: str,
         draft_path: str,
         draft_root_path: str,
@@ -448,6 +503,7 @@ class DraftFolder:
         tm_draft_modified: int,
         tm_duration: int,
         timeline_materials_size: int,
+        crypto_config: Optional[DraftCryptoConfig] = None,
     ) -> None:
         meta_info["draft_id"] = draft_id
         meta_info["draft_name"] = draft_name
@@ -462,7 +518,13 @@ class DraftFolder:
             meta_info["draft_new_version"] = draft_new_version
         elif "draft_new_version" not in meta_info:
             meta_info["draft_new_version"] = ""
-        self._write_json_file(meta_path, meta_info)
+        write_draft_json_object(
+            meta_path,
+            meta_info,
+            state=meta_state,
+            crypto_config=self._resolve_crypto_config(crypto_config),
+            trailing_newline=True,
+        )
 
     def _build_root_meta_entry(
         self,

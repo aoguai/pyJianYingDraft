@@ -25,6 +25,7 @@ from .template_mode import ShrinkMode, ExtendMode
 from .script_file import ScriptFile
 from .draft_folder import DraftFolder
 from .draft_crypto import (
+    DraftCryptoConfig,
     DraftCryptoError,
     DraftCryptoProcessError,
     JianyingDraftCrypto,
@@ -251,6 +252,7 @@ __all__ = [
     "DraftFolder",
     "DraftCryptoError",
     "DraftCryptoProcessError",
+    "DraftCryptoConfig",
     "JianyingDraftCrypto",
     "decrypt_draft_bytes",
     "decrypt_draft_file",

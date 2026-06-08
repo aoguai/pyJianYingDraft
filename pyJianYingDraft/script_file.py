@@ -11,6 +11,14 @@ from typing import Type, Dict, List, Any
 from . import util
 from . import assets
 from . import exceptions
+from .draft_crypto import DraftCryptoConfig
+from .draft_codec import (
+    DraftJsonState,
+    load_draft_json_object,
+    same_json_path,
+    write_draft_json_object,
+    write_draft_json_text,
+)
 from .template_mode import ImportedTrack, EditableTrack, ImportedMediaTrack, ImportedTextTrack, ShrinkMode, ExtendMode, import_track
 from .time_util import Timerange, tim, srt_tstamp
 from .local_materials import VideoMaterial, AudioMaterial
@@ -206,6 +214,10 @@ class ScriptFile:
     """仅供 DraftFolder 注入的私有注册上下文"""
     _post_save_hook: Optional[Callable[["ScriptFile"], None]]
     """仅供 DraftFolder 注入的私有保存后钩子"""
+    _draft_content_crypto_state: Optional[DraftJsonState]
+    """模板模式下 draft_content.json 的读写格式状态"""
+    _draft_crypto_config: DraftCryptoConfig
+    """模板模式下草稿 JSON 加解密配置"""
 
     def __init__(self, width: int, height: int, fps: int, maintrack_adsorb: bool):
         """**创建剪映草稿推荐使用`DraftFolder.create_draft()`而非此方法**
@@ -231,26 +243,36 @@ class ScriptFile:
         self.imported_tracks = []
         self._draft_registration_context = None
         self._post_save_hook = None
+        self._draft_content_crypto_state = None
+        self._draft_crypto_config = DraftCryptoConfig()
 
         with open(assets.get_asset_path('DRAFT_CONTENT_TEMPLATE'), "r", encoding="utf-8") as f:
             self.content = json.load(f)
 
     @staticmethod
-    def load_template(json_path: str) -> "ScriptFile":
+    def load_template(
+        json_path: str,
+        *,
+        crypto_config: Optional[DraftCryptoConfig] = None,
+    ) -> "ScriptFile":
         """从JSON文件加载草稿模板
 
         Args:
             json_path (str): JSON文件路径
+            crypto_config (`DraftCryptoConfig`, optional): 加密草稿 JSON 的本地解密配置
 
         Raises:
             `FileNotFoundError`: JSON文件不存在
         """
         obj = ScriptFile(**util.provide_ctor_defaults(ScriptFile))
         obj.save_path = json_path
+        obj._draft_crypto_config = crypto_config if crypto_config is not None else DraftCryptoConfig()
         if not os.path.exists(json_path):
             raise FileNotFoundError("JSON文件 '%s' 不存在" % json_path)
-        with open(json_path, "r", encoding="utf-8") as f:
-            obj.content = json.load(f)
+        obj.content, obj._draft_content_crypto_state = load_draft_json_object(
+            json_path,
+            crypto_config=obj._draft_crypto_config,
+        )
 
         util.assign_attr_with_json(obj, ["fps", "duration"], obj.content)
         util.assign_attr_with_json(obj, ["maintrack_adsorb"], obj.content["config"])
@@ -907,12 +929,36 @@ class ScriptFile:
 
         return json.dumps(self.content, ensure_ascii=False, indent=4)
 
-    def dump(self, file_path: str) -> None:
+    def dump(
+        self,
+        file_path: str,
+        *,
+        encrypted: Optional[bool] = None,
+        crypto_config: Optional[DraftCryptoConfig] = None,
+    ) -> None:
         """将草稿文件内容写入文件"""
-        with open(file_path, "w", encoding="utf-8") as f:
-            f.write(self.dumps())
+        config = crypto_config if crypto_config is not None else self._draft_crypto_config
+        state = None
+        if self.save_path is not None and same_json_path(file_path, self.save_path):
+            state = self._draft_content_crypto_state
 
-    def save(self) -> None:
+        new_state = write_draft_json_text(
+            file_path,
+            self.dumps(),
+            state=state,
+            encrypted=encrypted,
+            crypto_config=config,
+        )
+        if self.save_path is not None and same_json_path(file_path, self.save_path):
+            self._draft_content_crypto_state = new_state
+            self._draft_crypto_config = config
+
+    def save(
+        self,
+        *,
+        encrypted: Optional[bool] = None,
+        crypto_config: Optional[DraftCryptoConfig] = None,
+    ) -> None:
         """保存草稿文件至打开时的路径
 
         Raises:
@@ -920,14 +966,15 @@ class ScriptFile:
         """
         if self.save_path is None:
             raise ValueError("没有设置保存路径, 可能不在模板模式下")
+        config = crypto_config if crypto_config is not None else self._draft_crypto_config
         self._refresh_project_id_if_needed()
-        self.dump(self.save_path)
+        self.dump(self.save_path, encrypted=encrypted, crypto_config=config)
 
         # draft_meta_info.json：用于将媒体导入到剪映媒体库（不直接影响时间线轨道）
         # 仅当同目录下存在 draft_meta_info.json 时进行同步，避免对单独的模板JSON写入额外文件。
         meta_path = os.path.join(os.path.dirname(self.save_path), "draft_meta_info.json")
         if os.path.exists(meta_path):
-            self._sync_draft_meta_info(meta_path)
+            self._sync_draft_meta_info(meta_path, encrypted=encrypted, crypto_config=config)
         if self._post_save_hook is not None:
             self._post_save_hook(self)
 
@@ -993,13 +1040,19 @@ class ScriptFile:
             deduped.append(item)
         return deduped
 
-    def _sync_draft_meta_info(self, meta_path: str) -> None:
+    def _sync_draft_meta_info(
+        self,
+        meta_path: str,
+        *,
+        encrypted: Optional[bool] = None,
+        crypto_config: Optional[DraftCryptoConfig] = None,
+    ) -> None:
         """将当前草稿中的媒体素材同步进 draft_meta_info.json 的 draft_materials(type=0).value"""
-        try:
-            with open(meta_path, "r", encoding="utf-8") as f:
-                meta_info = json.load(f)
-        except Exception:
-            # 文件损坏或为空时，回退到模板
+        config = crypto_config if crypto_config is not None else self._draft_crypto_config
+        meta_state = None
+        if os.path.exists(meta_path):
+            meta_info, meta_state = load_draft_json_object(meta_path, crypto_config=config)
+        else:
             with open(assets.get_asset_path("DRAFT_META_TEMPLATE"), "r", encoding="utf-8") as f:
                 meta_info = json.load(f)
 
@@ -1067,5 +1120,10 @@ class ScriptFile:
             })
             existing_paths.add(key)
 
-        with open(meta_path, "w", encoding="utf-8") as f:
-            json.dump(meta_info, f, ensure_ascii=False, indent=4)
+        write_draft_json_object(
+            meta_path,
+            meta_info,
+            state=meta_state,
+            encrypted=encrypted,
+            crypto_config=config,
+        )

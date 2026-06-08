@@ -15,6 +15,7 @@ import os
 import subprocess
 import sys
 import tempfile
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Optional, Sequence, Union
 
@@ -64,6 +65,17 @@ class DraftCryptoProcessError(DraftCryptoError):
         if self.stderr:
             detail += f", stderr={self.stderr.strip()}"
         super().__init__(detail)
+
+
+@dataclass(frozen=True)
+class DraftCryptoConfig:
+    """Configuration shared by draft JSON crypto integrations."""
+
+    jy_install_dir: Optional[PathLike] = None
+    timeout: Optional[float] = 120
+    isolated: bool = True
+    validate_roundtrip: bool = True
+    backup: bool = True
 
 
 class MsvcStringData(ctypes.Union):
