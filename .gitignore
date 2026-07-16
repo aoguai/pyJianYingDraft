@@ -6,10 +6,12 @@ dist/
 *.egg-info/
 
 CLAUDE.md
+AGENTS.local.md
 .vscode/
 .idea/
 .DS_Store
 
 .venv/
 venv/
+tools/
 新预设

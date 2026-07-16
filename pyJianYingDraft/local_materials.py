@@ -214,7 +214,9 @@ class VideoMaterial:
         """写入剪映识别美颜 figure 素材所需的视频素材侧 preset 信息"""
         self.beauty_face_auto_preset_infos = self._beauty_face_auto_preset_infos()
         self.beauty_face_preset_infos = self._beauty_face_preset_infos()
-        self.check_flag |= BEAUTY_ENABLED_CHECK_FLAG_MASK
+        # Imported or hand-constructed legacy materials may predate this
+        # private field; retain the JSON default instead of rejecting beauty.
+        self.check_flag = getattr(self, "check_flag", DEFAULT_VIDEO_CHECK_FLAG) | BEAUTY_ENABLED_CHECK_FLAG_MASK
 
     def export_json(self) -> Dict[str, Any]:
         video_material_json = {

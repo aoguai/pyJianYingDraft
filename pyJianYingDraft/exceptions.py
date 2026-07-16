@@ -15,6 +15,9 @@ class AmbiguousMaterial(ValueError):
 class ExtensionFailed(ValueError):
     """替换素材时延伸片段失败"""
 
+class DraftContentLoadFailed(ValueError):
+    """草稿内容加载失败"""
+
 class DraftNotFound(NameError):
     """未找到草稿"""
 class AutomationError(Exception):

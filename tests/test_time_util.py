@@ -26,3 +26,10 @@ def test_timerange_overlap_semantics():
     assert base.overlaps(draft.Timerange(2_000_000, 2_000_000))
     assert not base.overlaps(draft.Timerange(3_000_000, 1_000_000))
     assert base.overlaps(draft.Timerange(1_500_000, 200_000))
+
+
+def test_timerange_import_json_defaults_missing_start_to_zero():
+    timerange = draft.Timerange.import_json({"duration": "2000"})
+
+    assert timerange.start == 0
+    assert timerange.duration == 2000

@@ -5,7 +5,7 @@ from .effect_meta import EffectEnum, EffectMeta
 
 class TextBubbleType(EffectEnum):
     """文本气泡枚举"""
-    
+
     标题58 = EffectMeta(
         "标题58",
         False,

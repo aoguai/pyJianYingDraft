@@ -2,7 +2,10 @@ from .effect_meta import EffectEnum
 from .effect_meta import EffectMeta
 
 class SpeechToSongType(EffectEnum):
-    """剪映自带的音频“声音成曲”效果类型, 此类效果目前不能自动被剪映所识别"""
+    """剪映自带的音频“声音成曲”效果类型
+
+    实测在剪映5.9中不支持, 在剪映10.8中可被识别并接入处理结果.
+    """
 
     Lofi        = EffectMeta("Lofi", False, "7252917861948068410", "17345060", "8dd8889045e6c065177df791ddb3dfb8", [])
     民谣        = EffectMeta("民谣", False, "7251868698170888759", "17046923", "8dd8889045e6c065177df791ddb3dfb8", [])

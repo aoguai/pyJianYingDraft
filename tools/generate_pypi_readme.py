@@ -8,8 +8,8 @@ from pathlib import Path
 from urllib.parse import quote
 
 
-REPO_BLOB_BASE = "https://github.com/GuanYixuan/pyJianYingDraft/blob/main/"
-REPO_RAW_BASE = "https://github.com/GuanYixuan/pyJianYingDraft/raw/main/"
+REPO_BLOB_BASE = "https://github.com/aoguai/pyJianYingDraft/blob/main/"
+REPO_RAW_BASE = "https://github.com/aoguai/pyJianYingDraft/raw/main/"
 ROOT = Path(__file__).resolve().parents[1]
 README_PATH = ROOT / "README.md"
 PYPI_README_PATH = ROOT / "pypi_readme.md"

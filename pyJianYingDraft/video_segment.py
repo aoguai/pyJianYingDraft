@@ -21,6 +21,20 @@ from .metadata import VideoSceneEffectType, VideoCharacterEffectType
 from .metadata import BeautyType, SkinToneType
 from .metadata.mix_mode_meta import MixModeType
 
+
+def _normalize_rgba_color(color: str) -> str:
+    color = color.strip()
+    if not color.startswith("#"):
+        raise ValueError("颜色必须使用 '#RRGGBBAA' 格式")
+    if len(color) != 9:
+        raise ValueError("颜色必须使用 '#RRGGBBAA' 格式")
+
+    hex_part = color[1:]
+    if any(ch not in "0123456789abcdefABCDEF" for ch in hex_part):
+        raise ValueError("颜色必须使用 '#RRGGBBAA' 格式")
+    return "#" + hex_part.lower()
+
+
 class Mask:
     """蒙版对象"""
 
@@ -114,6 +128,53 @@ class Mask:
             "type": "mask"
             # 不导出path字段
         }
+
+
+class Chroma:
+    """色度抠图对象"""
+
+    global_id: str
+    """色度抠图全局id, 由程序自动生成"""
+
+    color: str
+    """抠图关键色, 格式为 '#RRGGBBAA'"""
+    intensity_value: float
+    """强度, 0-1"""
+    shadow_value: float
+    """阴影, 0-1"""
+    edge_smooth_value: float
+    """边缘羽化, 0-1"""
+    spill_value: float
+    """边缘清晰, 0-1"""
+
+    def __init__(
+        self,
+        color: str,
+        intensity_value: float,
+        shadow_value: float,
+        edge_smooth_value: float,
+        spill_value: float,
+    ):
+        self.global_id = str(uuid.uuid4()).upper()
+        self.color = _normalize_rgba_color(color)
+        self.intensity_value = intensity_value
+        self.shadow_value = shadow_value
+        self.edge_smooth_value = edge_smooth_value
+        self.spill_value = spill_value
+
+    def export_json(self) -> Dict[str, Any]:
+        return {
+            "color": self.color,
+            "edge_smooth_value": self.edge_smooth_value,
+            "id": self.global_id,
+            "intensity_value": self.intensity_value,
+            "shadow_value": self.shadow_value,
+            "should_transfer_color": True,
+            "spill_value": self.spill_value,
+            "type": "chroma",
+            "version": "v2",
+        }
+
 
 class VideoEffect:
     """视频特效素材"""
@@ -412,7 +473,7 @@ class BackgroundFilling:
         self.global_id = uuid.uuid4().hex
         self.fill_type = fill_type
         self.blur = blur
-        self.color = color
+        self.color = _normalize_rgba_color(color)
 
     def export_json(self) -> Dict[str, Any]:
         return {
@@ -513,6 +574,11 @@ class VideoSegment(VisualSegment):
 
     在放入轨道时自动添加到素材列表中
     """
+    chroma: Optional[Chroma]
+    """色度抠图实例, 可能为空
+
+    在放入轨道时自动添加到素材列表中
+    """
 
     def __init__(self, material: Union[VideoMaterial, str], target_timerange: Optional[Timerange] = None, *,
                  source_timerange: Optional[Timerange] = None, speed: Optional[float] = None, volume: float = 1.0,
@@ -566,6 +632,7 @@ class VideoSegment(VisualSegment):
         self.transition = None
         self.mask = None
         self.background_filling = None
+        self.chroma = None
         self.fade = None
 
     def add_animation(self, animation_type: Union[IntroType, OutroType, GroupAnimationType],
@@ -826,6 +893,42 @@ class VideoSegment(VisualSegment):
             raise ValueError(f"无效的背景填充类型 {fill_type}")
 
         self.extra_material_refs.append(self.background_filling.global_id)
+        return self
+
+    def add_chroma(self, color: str, intensity: float = 20.0, shadow: float = 0.0, edge_smooth: float = 0.0, spill: float = 0.0) -> "VideoSegment":
+        """为视频片段添加色度抠图
+
+        Args:
+            color (`str`): 抠图关键色, 格式为 `#RRGGBBAA`, 原则上不透明度应该为最大(`FF`)
+            intensity (`float`, optional): 强度, 0-100. 默认为20.
+            shadow (`float`, optional): 阴影, 0-100. 默认为0.
+            edge_smooth (`float`, optional): 边缘羽化(剪映会员功能), 0-100. 默认为0.
+            spill (`float`, optional): 边缘清晰(剪映会员功能), 0-100. 默认为0.
+
+        Raises:
+            `ValueError`: 当前片段已有色度抠图, 或参数超出范围, 或颜色格式无效
+        """
+        if self.chroma is not None:
+            raise ValueError("当前片段已有色度抠图, 不能再添加新的色度抠图")
+
+        chroma_params = {
+            "intensity": intensity,
+            "shadow": shadow,
+            "edge_smooth": edge_smooth,
+            "spill": spill,
+        }
+        for name, value in chroma_params.items():
+            if not 0.0 <= value <= 100.0:
+                raise ValueError(f"色度抠图参数 {name}={value} 超出了范围 0~100")
+
+        self.chroma = Chroma(
+            color,
+            intensity / 100.0,
+            shadow / 100.0,
+            edge_smooth / 100.0,
+            spill / 100.0,
+        )
+        self.extra_material_refs.append(self.chroma.global_id)
         return self
 
     def export_json(self) -> Dict[str, Any]:

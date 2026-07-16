@@ -21,6 +21,8 @@ from .metadata import AudioSceneEffectType, ToneEffectType, SpeechToSongType
 class AudioEffect:
     """音频特效对象"""
 
+    effect_meta: Union[AudioSceneEffectType, ToneEffectType, SpeechToSongType]
+    """音效元数据"""
     name: str
     """特效名称"""
     effect_id: str
@@ -33,7 +35,6 @@ class AudioEffect:
     category_index: int
 
     audio_adjust_params: List[EffectParamInstance]
-
     is_vc_clone_tone: bool
     third_resource_id: str
     source_platform: int
@@ -46,6 +47,7 @@ class AudioEffect:
                  params: Optional[List[Optional[float]]] = None):
         """根据给定的音效元数据及参数列表构造一个音频特效对象, params的范围是0~100"""
 
+        self.effect_meta = effect_meta
         self.name = effect_meta.value.name
         self.effect_id = uuid.uuid4().hex
         self.resource_id = effect_meta.value.resource_id
@@ -67,7 +69,6 @@ class AudioEffect:
             raise TypeError("不支持的元数据类型 %s" % type(effect_meta))
 
         self.audio_adjust_params = effect_meta.value.parse_params(params)
-
         self.is_vc_clone_tone = bool(getattr(effect_meta.value, "is_vc_clone_tone", False))
         self.third_resource_id = getattr(effect_meta.value, "third_resource_id", "") or self.resource_id
         self.source_platform = int(getattr(effect_meta.value, "source_platform", 0) or 0)
@@ -75,25 +76,22 @@ class AudioEffect:
         self.speaker_id = getattr(effect_meta.value, "speaker_id", "")
         self.production_path = getattr(effect_meta.value, "production_path", "")
         self.time_range = Timerange(0, 0)
-
-        # 某些音效在草稿中会使用 UI 分类（例如 “热门”），允许元数据覆盖
-        category_id = getattr(effect_meta.value, "category_id", "")
-        if category_id:
-            self.category_id = category_id
-        category_name = getattr(effect_meta.value, "category_name", "")
-        if category_name:
-            self.category_name = category_name
+        self.category_id = getattr(effect_meta.value, "category_id", "") or self.category_id
+        self.category_name = getattr(effect_meta.value, "category_name", "") or self.category_name
 
     def export_json(self) -> Dict[str, Any]:
-        return {
+        json_dict = {
             "audio_adjust_params": [param.export_json() for param in self.audio_adjust_params],
+            "id": self.effect_id,
+            "name": self.name,
+            "resource_id": self.resource_id,
+            "type": "audio_effect"
+        }
+        json_dict.update({
             "category_id": self.category_id,
             "category_name": self.category_name,
-            "id": self.effect_id,
             "is_ugc": False,
-            "name": self.name,
             "production_path": self.production_path,
-            "resource_id": self.resource_id,
             "speaker_id": self.speaker_id,
             "sub_type": self.category_index,
             "time_range": self.time_range.export_json(),
@@ -101,9 +99,8 @@ class AudioEffect:
             "source_platform": self.source_platform,
             "vc_type": self.vc_type,
             "is_vc_clone_tone": self.is_vc_clone_tone,
-            "type": "audio_effect"
-            # 不导出path和constant_material_id
-        }
+        })
+        return json_dict
 
 class AudioSegment(MediaSegment):
     """安放在轨道上的一个音频片段"""
@@ -130,7 +127,7 @@ class AudioSegment(MediaSegment):
 
         Args:
             material (`AudioMaterial` or `str`): 素材实例或素材路径, 若为路径则自动构造素材实例
-            target_timerange (`Timerange`, optional): 片段在轨道上的目标时间范围, 默认使用素材完整时长
+            target_timerange (`Timerange`): 片段在轨道上的目标时间范围
             source_timerange (`Timerange`, optional): 截取的素材片段的时间范围, 默认从开头根据`speed`截取与`target_timerange`等长的一部分
             speed (`float`, optional): 播放速度, 默认为1.0. 此项与`source_timerange`同时指定时, 将覆盖`target_timerange`中的时长
             volume (`float`, optional): 音量, 默认为1.0
@@ -143,7 +140,7 @@ class AudioSegment(MediaSegment):
             material = AudioMaterial(material)
 
         if source_timerange is not None and speed is not None:
-            start = target_timerange.start if target_timerange else 0
+            start = target_timerange.start if target_timerange is not None else 0
             target_timerange = Timerange(start, round(source_timerange.duration / speed))
         elif source_timerange is not None and speed is None:
             if target_timerange is None:
@@ -153,15 +150,17 @@ class AudioSegment(MediaSegment):
                 speed = source_timerange.duration / target_timerange.duration
         else:
             speed = speed if speed is not None else 1.0
-            if target_timerange is None:    # target_timerange and source_timerange is None
+            if target_timerange is None:
                 source_timerange = Timerange(0, material.duration)
                 target_timerange = Timerange(0, round(source_timerange.duration / speed))
-            else:  # source_timerange is None
+            else:
                 source_timerange = Timerange(0, round(target_timerange.duration * speed))
 
+        assert source_timerange is not None
         if source_timerange.end > material.duration:
             raise ValueError(f"截取的素材时间范围 {source_timerange} 超出了素材时长({material.duration})")
 
+        assert target_timerange is not None
         super().__init__(material.material_id, source_timerange, target_timerange, speed, volume, change_pitch)
 
         self.material_instance = deepcopy(material)
@@ -170,7 +169,10 @@ class AudioSegment(MediaSegment):
 
     def add_effect(self, effect_type: Union[AudioSceneEffectType, ToneEffectType, SpeechToSongType],
                    params: Optional[List[Optional[float]]] = None) -> "AudioSegment":
-        """为音频片段添加一个作用于整个片段的音频效果, 目前"声音成曲"效果不能自动被剪映所识别
+        """为音频片段添加一个作用于整个片段的音频效果
+
+        `"声音成曲"`效果在剪映5.9中不支持, 在较新的剪映版本中可触发后续处理链路.
+        `"音色"`效果实测在剪映5.9与10.8中可生效.
 
         Args:
             effect_type (`AudioSceneEffectType` | `ToneEffectType` | `SpeechToSongType`): 音效类型, 一类音效只能添加一个.
@@ -184,10 +186,7 @@ class AudioSegment(MediaSegment):
             raise ValueError("为音频效果 %s 传入了过多的参数" % effect_type.value.name)
 
         effect_inst = AudioEffect(effect_type, params)
-        if self.source_timerange is not None:
-            effect_inst.time_range = deepcopy(self.source_timerange)
-
-        # 以 sub_type(1/2/3) 做互斥判断，避免高版本中 category_id 变为“热门/推荐/...“后导致重复添加
+        effect_inst.time_range = deepcopy(self.source_timerange)
         if effect_inst.category_index in [eff.category_index for eff in self.effects]:
             raise ValueError("当前音频片段已经有此类型 (%s) 的音效了" % effect_inst.category_name)
         self.effects.append(effect_inst)

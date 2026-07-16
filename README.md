@@ -2,63 +2,99 @@
 # pyJianYingDraft
 ### 轻量、灵活、易上手的Python剪映草稿生成及导出工具，构建全自动视频剪辑/混剪流水线！
 
+> 🧪 本项目的**CapCut版本**正在开发中，欢迎关注[CapCut版本仓库](https://github.com/GuanYixuan/pyCapCut)
+
+> 📢 欢迎加入[Discord服务器](https://discord.gg/WfHgGQvhyW)进行用法或新功能的讨论
+
 ## 使用思路
 ![使用思路](readme_assets/使用思路.jpg)
 
 # 功能清单
-> ℹ 如未额外注明，一般仅在5.9版本上测试过
 
-> 标注☑️的特性**已实现**，标注⬜的特性**待实现**
-
-### 模板模式
-> ⚠️ 剪映高版本普通草稿会加密`draft_content.json`和`draft_meta_info.json`。明文模板仍可直接使用；加密草稿需要Windows 64位Python、本机已安装剪映，并配置`JY_INSTALL_DIR`或`DraftCryptoConfig(jy_install_dir=...)`。
-
-> ℹ 加密支持通过本机剪映`videoeditor.dll`完成，项目不分发剪映DLL，也不保证覆盖所有剪映版本。
-
-- ☑️ [加载](#加载模板)`draft_content.json`文件作为模板（明文直接读取；加密文件在配置本机crypto环境后自动解密）
-- ☑️ [替换音视频片段的素材](#根据名称替换素材)
-- ☑️ [修改文本片段的文本内容](#替换文本片段的内容)
-- ☑️ [将模板草稿中的音视频/文本轨道整体导入到另一草稿中](#导入模板草稿中的轨道)
-- ☑️ [提取模板中出现的贴纸/气泡/花字等元信息](#提取素材元数据)
-
-### 批量导出
-> ⚠️ 剪映7+版本隐藏了控件，故**本系列功能目前仅支持剪映6及以下版本**
-
-- ☑️ 控制剪映打开指定草稿
-- ☑️ [导出草稿至指定位置](#批量导出草稿)
-- ☑️ 调节导出分辨率和帧率
+> 🧪 目前处在的`0.3.0`版本经历了大规模更新，若有相关功能问题欢迎提出issue
 
 ### 视频与图片
-> ℹ 以下草稿生成功能（音视频、贴纸、文本、特效等）**支持剪映5及以上的所有版本**
+| 功能名称 | 5.9 支持状态 | 新版剪映支持状态 |
+|---|---|---|
+| 本地视频/图片素材与[时间控制](#素材截取与整体变速) | ✅ | 10.8 ✅ |
+| [视频整体调节](#视频整体调节) | ✅ | 10.8 ✅ |
+| [视频关键帧](#关键帧) | ✅ | 10.8 ✅ |
+| [视频蒙版](#蒙版) | ✅ | 10.8 ❌<br>预计在`0.3.1`中修复 |
+| [视频色度抠图](#色度抠图) | ✅ | 10.8 ✅ |
+| 视频背景填充[(示例代码)](demo.py) | ✅ | 10.8 ✅ |
+| [视频混合模式](#视频混合模式) | ✅ | 10.8 ✅ |
 
-- ☑️ 添加本地视频/图片素材，并[自定义片段的时间、持续时长或播放速度](#素材截取与整体变速)
-- ☑️ 视频片段的[音频淡入淡出效果](#音频淡入淡出)
-- ☑️ [视频整体调节](#视频整体调节)（旋转、缩放、亮度等）以及[关键帧生成](#关键帧)
-- ☑️ 视频片段的[入场/出场/组合动画](#添加片段动画)
-- ☑️ 添加[蒙版](#蒙版)、[片段特效](#添加片段特效)和[滤镜](#添加片段滤镜)
-- ☑️ （项目700⭐️回馈功能）视频背景填充[(示例代码)](demo.py)
-- ☑️ （项目2k⭐️回馈功能）[视频混合模式](#视频混合模式)（正片叠底、滤色、叠加等）
 ### 贴纸
-- ☑️ 根据元信息[添加贴纸](#提取素材元数据)
-- ☑️ 贴纸的[关键帧](#关键帧)生成
+
+| 功能名称 | 5.9 支持状态 | 新版剪映支持状态 |
+|---|---|---|
+| [贴纸](#提取素材元数据) | ✅ | 10.8 ✅ |
+| [贴纸关键帧](#关键帧) | ✅ | 10.8 ✅ |
+
 ### 音频
-- ☑️ 添加本地音频素材，并[自定义片段的时间、持续时长或播放速度](#素材截取与整体变速)
-- ☑️ 调整[淡入淡出](#音频淡入淡出)时长[(示例代码)](demo.py)，调整音量[(示例代码)](demo.py)及其[关键帧](#关键帧)
-- ☑️ 添加音频片段的[场景音效果](#添加片段特效)，并设置参数
+
+| 功能名称 | 5.9 支持状态 | 新版剪映支持状态 |
+|---|---|---|
+| 本地音频素材与[时间控制](#素材截取与整体变速) | ✅ | 10.8 ✅ |
+| [音频淡入淡出](#音频淡入淡出)与音量 | ✅ | 10.8 ✅ |
+| [音频场景音、音色效果](#添加片段特效) | ✅ | 10.8 ✅ |
+| [音频声音成曲效果](#添加片段特效) | ❌<br>不生效 | 10.8 ✅ |
+
 ### 轨道
-- ☑️ [添加轨道](#多轨道操作)以及[将片段添加到指定轨道](#多轨道操作)
-- ☑️ 自定义视频/滤镜/特效轨道的[层级关系](#多轨道操作)
+
+| 功能名称 | 5.9 支持状态 | 新版剪映支持状态 |
+|---|---|---|
+| [添加轨道与添加片段](#多轨道操作) | ✅ | 10.8 ✅ |
+| [轨道顺序控制](#多轨道操作) | ✅ | 10.8 🟡<br>从其它草稿导入的轨道可能存在顺序问题 |
+
 ### 特效、滤镜和转场
-- ☑️ 吸附于片段上的[特效](#添加片段特效)、[滤镜](#添加片段滤镜)和[动画](#添加片段动画)
-- ☑️ 位于[独立轨道的特效和滤镜](#独立轨道上的特效和滤镜)
-- ☑️ 添加转场[(示例代码)](demo.py)，并自定义其时长
+> ⚠️ 剪映在打开草稿时会尝试自动下载未缓存的动画/特效/转场等，但有可能会超时，表现为“xx加载失败”，**这个问题在5.9上出现较多**
+
+| 功能名称 | 5.9 支持状态 | 新版剪映支持状态 |
+|---|---|---|
+| [视频片段动画](#添加片段动画) | ✅ | 10.8 ✅ |
+| [视频片段特效](#添加片段特效) | ✅ | 10.8 ✅ |
+| [视频片段滤镜](#添加片段滤镜) | ✅ | 10.8 ✅ |
+| [独立轨道特效](#独立轨道上的特效和滤镜) | ✅ | 10.8 ✅ |
+| [独立轨道滤镜](#独立轨道上的特效和滤镜) | ✅ | 10.8 ✅ |
+| 转场[(示例代码)](demo.py) | ✅ | 10.8 ✅ |
+
 ### 文本及字幕
-- ☑️ [添加文本、设置字体及样式](#添加文本)、修改文本片段的[位置及旋转设置](#视频整体调节)
-- ☑️ 文本的[关键帧](#关键帧)以及[动画](#添加片段动画)
-- ☑️ 文字描边、背景和阴影
-- ☑️ 文字气泡/花字/逐字样式效果[(示例代码)](demo.py)
-- ☑️ 文本[自动换行](#文本自动换行)，支持设置最大行宽
-- ☑️ [导入`.srt`文件](#导入字幕)生成字幕并批量设置格式
+
+| 功能名称 | 5.9 支持状态 | 新版剪映支持状态 |
+|---|---|---|
+| [文本与样式](#添加文本) | ✅ | 10.8 ✅ |
+| [字体](#添加文本) | 🟡<br>未缓存的字体需要二次打开草稿 | 10.8 🟡<br>未缓存的字体需要二次打开草稿 |
+| [文本关键帧](#关键帧) | ✅ | 10.8 ✅ |
+| [文本动画](#添加片段动画) | ✅ | 10.8 ✅ |
+| 文字描边、背景和阴影 | ✅ | 10.8 ✅ |
+| 文字气泡效果和花字效果[(示例代码)](demo.py) | ✅ | 10.8 ✅ |
+| [文本自动换行](#文本自动换行) | ✅ | 10.8 ✅ |
+| [导入 `.srt` 字幕](#导入字幕) | ✅ | 10.8 ✅ |
+
+
+### 模板模式
+> ⚠️ 新版剪映中的 `draft_content.json` 往往不是可直接读取的明文 JSON；因此“加载模板”相关能力在新版剪映上通常需要通过 `DraftFolder(..., fallback_loader=...)` 接入额外读取器，详情请参见[此处](https://github.com/GuanYixuan/pyJianYingDraft/releases)
+
+> ℹ 本 fork 额外提供可逆的 `content_codec` 私有扩展，用于拥有合法访问权的本机草稿格式；它不是上游公开实现，也不应进入面向上游的 PR。
+
+| 功能名称 | 5.9 支持状态 | 新版剪映支持状态 |
+|---|---|---|
+| [加载](#加载模板) `draft_content.json` 文件作为模板 | ✅ | 10.8 🟡<br>需 `fallback_loader` |
+| [替换音视频片段的素材](#根据名称替换素材) | ✅ | 10.8 🟡<br>依赖模板可读 |
+| [修改文本片段的文本内容](#替换文本片段的内容) | ✅ | 10.8 🟡<br>依赖模板可读 |
+| [将模板草稿中的音视频/文本轨道整体导入到另一草稿中](#导入模板草稿中的轨道) | ✅ | 10.8 🟡<br>依赖模板可读 |
+| [提取模板中出现的贴纸/气泡/花字等元信息](#提取素材元数据) | ✅ | 10.8 🟡<br>依赖模板可读 |
+
+### 批量导出
+> ⚠️ 自动导出依赖旧版剪映可见控件；新版（7及以上）剪映通常不再满足这一前提
+
+| 功能名称 | 5.9 支持状态 | 新版剪映支持状态 |
+|---|---|---|
+| 控制剪映打开指定草稿 | ✅ | 6.8（剪映6及以下）✅<br>10.8（剪映7及以上）❌ |
+| [导出草稿至指定位置](#批量导出草稿) | ✅ | 6.8（剪映6及以下）✅<br>10.8（剪映7及以上）❌ |
+| 调节导出分辨率和帧率 | ✅ | 6.8（剪映6及以下）✅<br>10.8（剪映7及以上）❌ |
+
 
 # 安装
 pyJianYingDraft现已支持pip安装（不含demo），推荐使用开发时测试的Python版本3.8或3.11
@@ -70,11 +106,11 @@ pip install pyJianYingDraft
 
 ### 跨平台兼容性
 - **Windows**：支持包括草稿生成、模板模式和自动导出在内的所有功能（具体可能受到剪映版本限制）
-- **Linux/MacOS**：支持草稿生成和明文模板模式，但**不支持自动导出**，且注意**生成的草稿仍然需要在Windows版剪映下导出**。高版本加密草稿的自动解密/回加密仅支持Windows本机剪映环境。
+- **Linux/MacOS**：支持草稿生成和模板模式，但**不支持自动导出**，且注意**生成的草稿仍然需要在Windows版剪映下导出**。
 <!-- PYPI:END -->
 
 # 快速上手
-例程`demo.py`将创建包含音视频素材和一行文本的剪映草稿文件，并且添加了音频淡入、视频入场动画、转场效果以及文本气泡/花字/逐字样式示例。
+例程`demo.py`将创建包含音视频素材和一行文本的剪映草稿文件，并且添加了音频淡入、视频入场动画、转场效果和文本气泡/花字。
 
 这个例程的操作方法如下：
 1. 找到剪映的**草稿文件夹路径**（类似`.../JianyingPro Drafts`），用其替换代码中的`<你的草稿文件夹>`
@@ -99,7 +135,7 @@ pip install pyJianYingDraft
 
 除此之外，对于某些没有特定名称的特性（贴纸、花字等），提供了[提取素材元数据](#提取素材元数据)的功能以提取其`resource_id`
 
-> ⚠️ 如果模板草稿来自高版本剪映且JSON文件已加密，请先在本机配置`JY_INSTALL_DIR`环境变量，或在代码中传入`DraftCryptoConfig`。未配置时只能加载明文模板。
+> ⚠️ 默认仅支持明文模板，用户若需读取有合法访问权的非明文模板内容，可通过`DraftFolder(..., fallback_loader=...)`接入额外草稿加载器
 
 > ℹ 若出现模板内容丢失的情况，欢迎反馈
 
@@ -117,23 +153,31 @@ script = draft_folder.duplicate_as_template("模板草稿", "新草稿")  # 复�
 script.save()  # 保存你的"新草稿"
 ```
 
-若草稿来自高版本剪映且`draft_content.json`/`draft_meta_info.json`已加密，可以配置本机剪映安装目录。加载时会先尝试按明文JSON解析；解析失败后自动解密。保存时会保留来源文件的明文/密文状态，并在回加密前做roundtrip校验。
+用户若有额外的草稿读取器，也可以在构造`DraftFolder`时传入：
+
+```python
+draft_folder = draft.DraftFolder(
+    "<剪映草稿文件夹>",
+    fallback_loader=my_local_loader,
+)
+```
+
+本 fork 还提供只在本地使用的可逆 codec。它会先尝试读取明文 JSON；只有明文读取失败时才调用 codec，并且仅对实际通过 codec 打开的草稿在后续 `save()` 时保持原格式：
 
 ```python
 import pyJianYingDraft as draft
 
-crypto = draft.DraftCryptoConfig(jy_install_dir=r"C:\Program Files\JianyingPro\Apps\XXX")
-draft_folder = draft.DraftFolder("<剪映草稿文件夹>", crypto_config=crypto)
-
-script = draft_folder.duplicate_as_template("高版本模板草稿", "新草稿")
-script.save()  # 若来源为加密草稿，将自动回写为加密JSON
+codec = draft.JianyingDraftCryptoCodec(
+    draft.DraftCryptoConfig(jy_install_dir=r"C:\Program Files\JianyingPro\10.8.0.0")
+)
+draft_folder = draft.DraftFolder(
+    "<剪映草稿文件夹>",
+    content_codec=codec,
+    user_data_path="<JianyingPro User Data>",  # 可选：启用私有草稿注册与逻辑文件夹功能
+)
 ```
 
-也可以设置环境变量，避免在代码中传路径：
-
-```powershell
-$env:JY_INSTALL_DIR = "C:\Program Files\JianyingPro\Apps\XXX"
-```
+`fallback_loader` 与 `content_codec` 不能同时传入：前者是上游的只读加载回调，后者是本 fork 的读写格式协议。
 
 为了最大限度地兼容模板中的复杂特性，**导入的轨道与pyJianYingDraft创建的轨道是分离开的**，具体地讲：
 
@@ -258,9 +302,8 @@ text_track = source_script.get_imported_track(
 # 导入文本轨道到新草稿
 target_script.import_track(
     source_script, text_track,
-    offset=target_script.duration,  # 导入的轨道将放在新草稿末尾
+    offset=target_script.duration,  # 不传位置参数时，导入的轨道将追加到新草稿末尾
     new_name="imported_text",       # 可选的新轨道名
-    relative_index=1,               # 相对于所有文本轨道的位置, 值越大越接近前景, 可以是负数
 )
 ```
 
@@ -346,8 +389,11 @@ import pyJianYingDraft as draft
 from pyJianYingDraft import trange, SEC
 
 # 假定已有草稿文件script（参见“快速上手”），创建三个轨道
-for i in range(3, 0, -1): # 倒序
-    script.add_track(draft.TrackType.video, "%d" % i)
+script.append_tracks([
+    draft.TrackSpec(draft.TrackType.video, "3"),
+    draft.TrackSpec(draft.TrackType.video, "2"),
+    draft.TrackSpec(draft.TrackType.video, "1"),
+])
 
 # 以下部分讲解素材与片段的创建
 # 方式一：便捷构造（推荐）
@@ -389,17 +435,27 @@ script.dump("*你的草稿工程文件夹*/draft_content.json")
 ```
 
 #### 多轨道操作
-目前`ScriptFile.add_track`方法已支持创建多个同类型轨道，并支持自定义其顺序：
+`ScriptFile` 当前提供两组明确的建轨接口：
+
+* `append_track(...)` / `append_tracks(...)`：放到当前最上层
+* `insert_track(...)` / `insert_tracks(...)`：放到某条轨道上方/下方，或指定层级下标
+
+例如：
 ```python
-script.add_track(draft.TrackType.video,
-                 track_name="前景",       # 轨道名
-                 relative_index=2)        # 在所有视频轨道中的相对位置
-script.add_track(draft.TrackType.video,
-                 track_name="背景",
-                 relative_index=1)        # 由于1<2，所以前景轨道位于更上方
+background_ref = script.append_track(draft.TrackSpec(draft.TrackType.video, "背景"))
+script.insert_track(
+    draft.TrackSpec(draft.TrackType.video, "前景"),
+    over_track=background_ref,
+)
 ```
 
-> ℹ 对于相同index的轨道，默认**后创建的轨道位于上方**
+其中：
+
+* `over_track=...` 表示插入到指定轨道上方，也就是更靠前景
+* `under_track=...` 表示插入到指定轨道下方，也就是更靠背景
+* `at_index=0` 表示最底层，`at_index=len(当前轨道数)` 表示最上层
+* `insert_tracks([...])` 会将输入列表视为一个顺序块整体插入
+* 不再通过 `relative_index` / `absolute_index` 额外表达层级
 
 一旦创建了多个同类轨道，则在添加片段时必须指定目标轨道，例如：
 ```python
@@ -407,7 +463,7 @@ script.add_segment(video_segment, "背景")
 ```
 
 ### 视频整体调节
-每个视频片段都可以单独设置裁剪、旋转、翻转、缩放、透明度、亮度等属性，这些设置通过`VideoSegment`构造函数中的`clip_settings`参数传入
+每个视频片段都可以单独设置旋转、翻转、缩放、透明度和位移等属性，这些设置通过`VideoSegment`构造函数中的`clip_settings`参数传入
 > ℹ 关键帧的优先级高于整体调节，故前者会覆盖后者的相应设置
 
 下方的例子将创建一个视频片段，并设置其不透明度为0.5、打开水平翻转：
@@ -433,7 +489,7 @@ import pyJianYingDraft as draft
 from pyJianYingDraft import KeyframeProperty, SEC
 
 # 假定已有草稿文件script（参见“快速上手”），创建视频轨道
-script.add_track(draft.TrackType.video)
+script.append_track(draft.TrackSpec(draft.TrackType.video))
 tutorial_asset_dir = os.path.join(os.path.dirname(__file__), 'readme_assets', 'tutorial')
 
 # 创建视频片段
@@ -500,29 +556,46 @@ video_segment2.add_mask(MaskType.圆形, size=0.5)
 
 更具体的参数说明请参见`add_mask`方法的注释。
 
+### 色度抠图
+色度抠图用于对视频片段做绿幕/色键抠图，调用`VideoSegment`的`add_chroma`方法即可：
+```python
+video_segment.add_chroma(
+    color="#E2ECD0FF",
+    intensity=20,
+    shadow=0,
+    edge_smooth=0,
+    spill=0,
+)
+```
+其中：
+- `color`参数表示抠图关键色，格式为`#RRGGBBAA`
+- `intensity`、`shadow`、`edge_smooth`和`spill`参数的取值范围均为`0~100`，与剪映中的含义一致
+
 ### 视频混合模式
 混合模式用于控制视频片段与下层内容的混合方式，实现正片叠底、滤色、叠加等效果。
 
 > ℹ 混合模式需要至少两个视频轨道：一个基础轨道和一个叠加轨道
 
-> ℹ 叠加轨道必须位于基础轨道上方，可通过`relative_index`参数控制层次
+> ℹ 叠加轨道必须位于基础轨道上方，可通过显式追加/插入控制顺序
 
 使用`VideoSegment.set_mix_mode()`方法为视频片段设置混合模式：
 ```python
 from pyJianYingDraft import MixModeType
 
 # 创建两个视频轨道，明确层次关系
-script.add_track(draft.TrackType.video, "base", relative_index=1)      # 基础轨道在下层
-script.add_track(draft.TrackType.video, "overlay", relative_index=2)   # 叠加轨道在上层
+script.append_tracks([
+    draft.TrackSpec(draft.TrackType.video, "base"),
+    draft.TrackSpec(draft.TrackType.video, "overlay"),
+])
 
 # 基础视频片段
 base_video = draft.VideoSegment("base.mp4", trange("0s", "10s"))
-script.add_segment(base_video, track_name="base")
+script.add_segment(base_video, track="base")
 
 # 叠加视频片段，使用”滤色”混合模式
 overlay_video = draft.VideoSegment("overlay.mp4", trange("0s", "10s"))
 overlay_video.set_mix_mode(MixModeType.滤色)
-script.add_segment(overlay_video, track_name="overlay")
+script.add_segment(overlay_video, track="overlay")
 ```
 
 `MixModeType`支持以下10种混合模式：
@@ -533,9 +606,8 @@ script.add_segment(overlay_video, track_name="overlay")
 ### 特效、动画和滤镜
 #### 特效类型
 目前支持的**特效**类型由以下枚举类定义：
-- 音频：`AudioSceneEffectType`（场景音）
+- 音频：`AudioSceneEffectType`（场景音）、`ToneEffectType`（音色）、`SpeechToSongType`（声音成曲，**5.9下不生效**）
 - 视频：`VideoSceneEffectType`（画面特效）、`VideoCharacterEffectType`（人物特效）
-- 美颜：`BeautyType`（皮肤管理）、`SkinToneType`（肤色）
 
 目前支持的**动画**类型由以下枚举类定义：
 - 视频：`IntroType`（入场）, `OutroType`（出场）, `GroupAnimationType`（组合动画）
@@ -563,7 +635,12 @@ from pyJianYingDraft import VideoSceneEffectType
 video_segment.add_effect(VideoSceneEffectType.全息扫描,
                          [None, None, 100.0]) # 不设置前两个参数, 第三个参数（氛围）为100，其余参数也不设置
 ```
-音频片段的特效添加方法与视频片段相似
+音频片段的特效添加方法与视频片段相似。
+
+其中：
+- `AudioSceneEffectType`（场景音）和`ToneEffectType`（音色）当前按最小草稿结构导出；当前实测在剪映 5.9 与 10.8 中均可生效。
+- `SpeechToSongType`（声音成曲）不应视为纯静态 JSON 效果，其实际生效情况与剪映版本相关。
+  - 当前实测中，`SpeechToSongType` 在剪映 5.9 中虽可能显示为已识别的声音效果，但实际无效；在剪映 10.8 中则可生效。
 
 #### 添加片段滤镜
 滤镜的添加方法与特效类似，其使用的是`VideoSegment.add_filter()`方法。
@@ -576,26 +653,15 @@ video_segment1.add_filter(FilterType.原生肤, 10)  # 设置"原生肤"强度�
 video_segment2.add_filter(FilterType.冰雪世界, 50)  # 设置"冰雪世界"强度为50
 ```
 
-#### 添加片段美颜
-美颜美体效果使用`VideoSegment.add_beauty()`或`VideoSegment.set_skin_tone()`添加到视频片段上，强度参数范围为0~100。
-
-```python
-from pyJianYingDraft import BeautyType, SkinToneType
-
-video_segment.add_beauty(BeautyType.磨皮, 42)
-video_segment.add_beauty(BeautyType.美白, 31)
-video_segment.add_beauty(BeautyType.匀肤, 39)
-video_segment.add_beauty(BeautyType.清晰, 0)
-video_segment.set_skin_tone(SkinToneType.粉白, intensity=60)
-```
-
 #### 独立轨道上的特效和滤镜
 除了为视频片段添加特效和滤镜外，你还可以创建独立的特效轨道和滤镜轨道，并在其上添加特效和滤镜片段。
 
-首先使用`ScriptFile.add_track()`方法创建特效轨道或滤镜轨道。若需要指定顺序请参考[多轨道操作](#多轨道操作)
+首先使用`append_track(...)`或`append_tracks(...)`创建特效轨道或滤镜轨道。若需要插入到特定位置请参考[多轨道操作](#多轨道操作)
 ```python
-script.add_track(draft.TrackType.effect, "my_effect")  # 创建名为"my_effect"的特效轨道
-script.add_track(draft.TrackType.filter, "my_filter")  # 创建名为"my_filter"的滤镜轨道
+script.append_tracks([
+    draft.TrackSpec(draft.TrackType.effect, "my_effect"),
+    draft.TrackSpec(draft.TrackType.filter, "my_filter"),
+])
 ```
 
 接下来便可使用`add_effect`和`add_filter`方法向这些轨道添加片段：
@@ -658,40 +724,6 @@ seg2 = draft.TextSegment("这是一段很长的文本内容，当超过设定的
                                           max_line_width=0.7))     # 最大行宽占屏幕70%
 ```
 
-#### 逐字样式（富文本）
-可以通过`TextSegment.set_style_ranges_by_chars`为每个字符指定样式，`None`表示继承默认样式。设置后导出会自动标记为富文本（`is_rich_text`）。
-例如：交替颜色的逐字样式
-```python
-from pyJianYingDraft import FontType, TextStyle, ClipSettings
-
-text_segment = draft.TextSegment(
-    "测试中文字幕",
-    trange("0s", "3s"),
-    font=FontType.文轩体,
-    style=TextStyle(size=5.0, align=1),
-    clip_settings=ClipSettings(transform_y=-0.8),
-)
-
-alt_style = TextStyle(
-    size=text_segment.style.size,
-    bold=text_segment.style.bold,
-    italic=text_segment.style.italic,
-    underline=text_segment.style.underline,
-    color=(1.0, 0.4, 0.0),
-    alpha=text_segment.style.alpha,
-    align=text_segment.style.align,
-    vertical=text_segment.style.vertical,
-    letter_spacing=text_segment.style.letter_spacing,
-    line_spacing=text_segment.style.line_spacing,
-    auto_wrapping=text_segment.style.auto_wrapping,
-    max_line_width=text_segment.style.max_line_width,
-)
-
-styles = [alt_style if i % 2 == 0 else None for i in range(len(text_segment.text))]
-text_segment.set_style_ranges_by_chars(styles=styles)
-```
-也可以传入`effects`/`fonts`列表，为每个字符指定花字或字体效果。
-
 #### 导入字幕
 > ℹ 目前只支持导入**SRT格式**的字幕文件
 
@@ -710,7 +742,7 @@ script.import_srt("subtitle.srt", track_name="subtitle", time_offset="1.5s")  # 
 
 # 可以利用`text_style`和`clip_settings`参数对字幕的样式进行调整, 上述参数的意义与`TextSegment()`中的相同
 script.import_srt("subtitle.srt", track_name="subtitle",
-                  text_style=draft.TextStyle(size=10.0, color=(1.0, 0.0, 0.0))
+                  text_style=draft.TextStyle(size=10.0, color=(1.0, 0.0, 0.0)),
                   clip_settings=draft.ClipSettings(transform_y=0.8))  # 将字幕放置在屏幕上方
 
 # 如果需要更复杂的样式或希望为字幕应用动画，可以为`style_reference`参数传入一个`TextSegment`对象作为样式参考（忽略其文本和片段长度设置）
@@ -720,13 +752,3 @@ script.import_srt("subtitle.srt", track_name="subtitle", style_reference=seg1)  
 # 默认不会采用`style_reference`片段中的`clip_settings`设置，如果需要的话请显式传入`clip_settings=None`
 script.import_srt("subtitle.srt", track_name="subtitle", style_reference=seg1, clip_settings=None)  # 相当于clip_settings=seg1.clip_settings
 ```
-
-## 许可证
-
-本项目按 Apache License 2.0 开源，具体许可条款请见本仓库 [LICENSE](LICENSE) 文件。
-
-### 致谢
-
-- [wenshui330/jy-draftc](https://github.com/wenshui330/jy-draftc)：提供剪映高版本草稿 JSON 加解密方案参考并移植自此项目。
-    原项目说明其适用于使用 `jianying_draft_encrypt_v2` 加密方案的剪映 Windows 端草稿，明确验证范围为剪映 `10.3.0` 到 `10.6.5`；其他版本未验证。
-    因此，本项目的加密草稿支持也应按该范围谨慎使用，不保证覆盖所有剪映版本。
