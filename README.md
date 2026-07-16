@@ -2,10 +2,6 @@
 # pyJianYingDraft
 ### 轻量、灵活、易上手的Python剪映草稿生成及导出工具，构建全自动视频剪辑/混剪流水线！
 
-> 🧪 本项目的**CapCut版本**正在开发中，欢迎关注[CapCut版本仓库](https://github.com/GuanYixuan/pyCapCut)
-
-> 📢 欢迎加入[Discord服务器](https://discord.gg/WfHgGQvhyW)进行用法或新功能的讨论
-
 ## 使用思路
 ![使用思路](readme_assets/使用思路.jpg)
 
@@ -19,8 +15,9 @@
 | 本地视频/图片素材与[时间控制](#素材截取与整体变速) | ✅ | 10.8 ✅ |
 | [视频整体调节](#视频整体调节) | ✅ | 10.8 ✅ |
 | [视频关键帧](#关键帧) | ✅ | 10.8 ✅ |
-| [视频蒙版](#蒙版) | ✅ | 10.8 ❌<br>预计在`0.3.1`中修复 |
+| [视频蒙版](#蒙版) | ✅ | 10.8 🟡<br>本 fork 已接入，需本机验证 |
 | [视频色度抠图](#色度抠图) | ✅ | 10.8 ✅ |
+| [美颜与肤色](#添加片段美颜) | ✅ | 本 fork ✅ |
 | 视频背景填充[(示例代码)](demo.py) | ✅ | 10.8 ✅ |
 | [视频混合模式](#视频混合模式) | ✅ | 10.8 ✅ |
 
@@ -68,7 +65,7 @@
 | [文本关键帧](#关键帧) | ✅ | 10.8 ✅ |
 | [文本动画](#添加片段动画) | ✅ | 10.8 ✅ |
 | 文字描边、背景和阴影 | ✅ | 10.8 ✅ |
-| 文字气泡效果和花字效果[(示例代码)](demo.py) | ✅ | 10.8 ✅ |
+| 文字气泡、花字与[逐字富文本样式](#逐字样式富文本)[(示例代码)](demo.py) | ✅ | 10.8 ✅ |
 | [文本自动换行](#文本自动换行) | ✅ | 10.8 ✅ |
 | [导入 `.srt` 字幕](#导入字幕) | ✅ | 10.8 ✅ |
 
@@ -85,6 +82,8 @@
 | [修改文本片段的文本内容](#替换文本片段的内容) | ✅ | 10.8 🟡<br>依赖模板可读 |
 | [将模板草稿中的音视频/文本轨道整体导入到另一草稿中](#导入模板草稿中的轨道) | ✅ | 10.8 🟡<br>依赖模板可读 |
 | [提取模板中出现的贴纸/气泡/花字等元信息](#提取素材元数据) | ✅ | 10.8 🟡<br>依赖模板可读 |
+| 私有 `content_codec` 可逆读写与原格式保持 | - | 本 fork ✅ |
+| [私有草稿注册与逻辑文件夹](#私有草稿注册与逻辑文件夹) | - | 本 fork ✅ |
 
 ### 批量导出
 > ⚠️ 自动导出依赖旧版剪映可见控件；新版（7及以上）剪映通常不再满足这一前提
@@ -110,7 +109,7 @@ pip install pyJianYingDraft
 <!-- PYPI:END -->
 
 # 快速上手
-例程`demo.py`将创建包含音视频素材和一行文本的剪映草稿文件，并且添加了音频淡入、视频入场动画、转场效果和文本气泡/花字。
+例程`demo.py`将创建包含音视频素材和一行文本的剪映草稿文件，并且添加了音频淡入和音色、视频入场动画、转场效果，以及文本气泡、花字和逐字富文本样式。
 
 这个例程的操作方法如下：
 1. 找到剪映的**草稿文件夹路径**（类似`.../JianyingPro Drafts`），用其替换代码中的`<你的草稿文件夹>`
@@ -178,6 +177,29 @@ draft_folder = draft.DraftFolder(
 ```
 
 `fallback_loader` 与 `content_codec` 不能同时传入：前者是上游的只读加载回调，后者是本 fork 的读写格式协议。
+
+#### 私有草稿注册与逻辑文件夹
+当需要让新草稿自动登记到剪映的根 metadata，或按剪映逻辑文件夹组织草稿时，为`DraftFolder`提供本机 `JianyingPro User Data` 路径。首次`save()`会写入草稿注册信息；之后再移动到逻辑文件夹。
+
+```python
+draft_folder = draft.DraftFolder(
+    "<剪映草稿文件夹>",
+    user_data_path="<JianyingPro User Data>",
+)
+script = draft_folder.create_draft("示例草稿", 1920, 1080)
+# ... 添加轨道和片段 ...
+script.save()  # 首次保存后才拥有可移动的注册记录
+
+draft_folder.create_folder("活动")
+draft_folder.create_folder("活动/夏季")
+draft_folder.move_draft_to_folder("示例草稿", "活动/夏季")
+
+# 移回顶层，或在明确选择非空目录策略后删除逻辑文件夹：
+draft_folder.move_draft_to_root("示例草稿")
+draft_folder.remove_folder("活动", on_non_empty="move_drafts_to_root")
+```
+
+`remove_folder(..., on_non_empty="delete_drafts")` 会同时删除子树映射中的草稿物理目录；仅应在确认该副作用后使用。
 
 为了最大限度地兼容模板中的复杂特性，**导入的轨道与pyJianYingDraft创建的轨道是分离开的**，具体地讲：
 
@@ -608,6 +630,7 @@ script.add_segment(overlay_video, track="overlay")
 目前支持的**特效**类型由以下枚举类定义：
 - 音频：`AudioSceneEffectType`（场景音）、`ToneEffectType`（音色）、`SpeechToSongType`（声音成曲，**5.9下不生效**）
 - 视频：`VideoSceneEffectType`（画面特效）、`VideoCharacterEffectType`（人物特效）
+- 美颜：`BeautyType`（皮肤管理）、`SkinToneType`（肤色）
 
 目前支持的**动画**类型由以下枚举类定义：
 - 视频：`IntroType`（入场）, `OutroType`（出场）, `GroupAnimationType`（组合动画）
@@ -642,6 +665,15 @@ video_segment.add_effect(VideoSceneEffectType.全息扫描,
 - `SpeechToSongType`（声音成曲）不应视为纯静态 JSON 效果，其实际生效情况与剪映版本相关。
   - 当前实测中，`SpeechToSongType` 在剪映 5.9 中虽可能显示为已识别的声音效果，但实际无效；在剪映 10.8 中则可生效。
 
+例如，音色和声音成曲均通过音频片段的`add_effect()`添加：
+
+```python
+from pyJianYingDraft import ToneEffectType, SpeechToSongType
+
+audio_segment.add_effect(ToneEffectType.猴哥)
+audio_segment.add_effect(SpeechToSongType.Lofi)
+```
+
 #### 添加片段滤镜
 滤镜的添加方法与特效类似，其使用的是`VideoSegment.add_filter()`方法。
 与特效不同的是，滤镜只支持一个“滤镜强度”参数，且仅当所选滤镜能够调节强度时有效。
@@ -651,6 +683,19 @@ from pyJianYingDraft import FilterType
 
 video_segment1.add_filter(FilterType.原生肤, 10)  # 设置"原生肤"强度为10
 video_segment2.add_filter(FilterType.冰雪世界, 50)  # 设置"冰雪世界"强度为50
+```
+
+#### 添加片段美颜
+美颜美体效果使用`VideoSegment.add_beauty()`或`VideoSegment.set_skin_tone()`添加到视频片段上，强度参数范围为 0~100。连续设置肤色时，后一次设置会替换前一次肤色效果。
+
+```python
+from pyJianYingDraft import BeautyType, SkinToneType
+
+video_segment.add_beauty(BeautyType.磨皮, 42)
+video_segment.add_beauty(BeautyType.美白, 31)
+video_segment.add_beauty(BeautyType.匀肤, 39)
+video_segment.add_beauty(BeautyType.清晰, 0)
+video_segment.set_skin_tone(SkinToneType.粉白, intensity=60)
 ```
 
 #### 独立轨道上的特效和滤镜
@@ -711,6 +756,16 @@ seg1 = draft.TextSegment("Subtitle", trange("0s", "10s"),
 
 更具体的参数说明可参见`TextStyle`和`ClipSettings`的构造函数。
 
+#### 文本气泡与花字
+文本气泡和花字都以枚举元数据形式提供；添加后会同时写入文字片段的引用和草稿素材列表。
+
+```python
+from pyJianYingDraft import TextBubbleType, TextEffectType
+
+text_segment.add_bubble(TextBubbleType.标题58)
+text_segment.add_effect(TextEffectType.拼贴浅红)
+```
+
 #### 文本自动换行
 文本片段支持自动换行功能，可以通过`TextStyle`的`auto_wrapping`和`max_line_width`参数来控制：
 
@@ -722,6 +777,40 @@ seg2 = draft.TextSegment("这是一段很长的文本内容，当超过设定的
                           style=TextStyle(size=5.0,
                                           auto_wrapping=True,      # 启用自动换行
                                           max_line_width=0.7))     # 最大行宽占屏幕70%
+```
+
+#### 逐字样式（富文本）
+可以通过`TextSegment.set_style_ranges_by_chars()`为每个字符指定样式，`None`表示继承默认样式。设置后导出会标记为富文本（`is_rich_text`）；也可以传入`effects`或`fonts`列表，为每个字符指定花字或字体效果。
+
+例如：交替颜色的逐字样式。
+
+```python
+from pyJianYingDraft import FontType, TextStyle, ClipSettings
+
+text_segment = draft.TextSegment(
+    "测试中文字幕",
+    trange("0s", "3s"),
+    font=FontType.文轩体,
+    style=TextStyle(size=5.0, align=1),
+    clip_settings=ClipSettings(transform_y=-0.8),
+)
+
+alt_style = TextStyle(
+    size=text_segment.style.size,
+    bold=text_segment.style.bold,
+    italic=text_segment.style.italic,
+    underline=text_segment.style.underline,
+    color=(1.0, 0.4, 0.0),
+    alpha=text_segment.style.alpha,
+    align=text_segment.style.align,
+    vertical=text_segment.style.vertical,
+    letter_spacing=text_segment.style.letter_spacing,
+    line_spacing=text_segment.style.line_spacing,
+    auto_wrapping=text_segment.style.auto_wrapping,
+    max_line_width=text_segment.style.max_line_width,
+)
+styles = [alt_style if index % 2 == 0 else None for index in range(len(text_segment.text))]
+text_segment.set_style_ranges_by_chars(styles=styles)
 ```
 
 #### 导入字幕

@@ -5,6 +5,11 @@ from pyJianYingDraft import IntroType, TransitionType, trange, tim
 
 # 设置草稿文件夹
 draft_folder = draft.DraftFolder(r"<你的草稿文件夹>")
+# 如果需要显式指定剪映 User Data 路径，可以改为：
+# draft_folder = draft.DraftFolder(
+#     r"<你的草稿文件夹>",
+#     user_data_path=r"<你的 User Data 文件夹>",
+# )
 
 tutorial_asset_dir = os.path.join(os.path.dirname(__file__), 'readme_assets', 'tutorial')
 assert os.path.exists(tutorial_asset_dir), f"未找到例程素材文件夹{os.path.abspath(tutorial_asset_dir)}"
@@ -24,6 +29,7 @@ audio_segment = draft.AudioSegment(os.path.join(tutorial_asset_dir, 'audio.mp3')
                                    trange("0s", "5s"),  # 片段将位于轨道上的0s-5s（注意5s表示持续时长而非结束时间）
                                    volume=0.6)          # 音量设置为60%(-4.4dB)
 audio_segment.add_fade("1s", "0s")                      # 增加一个1s的淡入
+audio_segment.add_effect(draft.ToneEffectType.猴哥)        # 使用猴哥音色
 
 # 创建视频片段
 video_segment = draft.VideoSegment(os.path.join(tutorial_asset_dir, 'video.mp4'),
@@ -52,9 +58,42 @@ text_segment = draft.TextSegment(
     clip_settings=draft.ClipSettings(transform_y=-0.8)               # 位置在屏幕下方
 )
 text_segment.add_animation(draft.TextOutro.故障闪动, duration=tim("1s"))  # 添加出场动画“故障闪动”, 设置时长为1s
-text_segment.add_bubble("361595", "6742029398926430728")                  # 添加文本气泡效果, 相应素材元数据的获取参见readme中"提取素材元数据"部分
-text_segment.add_effect("7296357486490144036")                            # 添加花字效果, 相应素材元数据的获取参见readme中"提取素材元数据"部分
-script.add_segment(text_segment, track=caption_ref)                         # 加到caption轨道中
+text_segment.add_bubble(draft.TextBubbleType.标题58)                       # 添加文本气泡效果
+text_segment.add_effect(draft.TextEffectType.拼贴浅红)                     # 添加花字效果
+
+# 逐字样式示例：交替颜色（花字仍会覆盖文字的最终视觉样式）
+alt_style = draft.TextStyle(
+    size=text_segment.style.size,
+    bold=text_segment.style.bold,
+    italic=text_segment.style.italic,
+    underline=text_segment.style.underline,
+    color=(1.0, 0.4, 0.0),
+    alpha=text_segment.style.alpha,
+    align=text_segment.style.align,
+    vertical=text_segment.style.vertical,
+    letter_spacing=text_segment.style.letter_spacing,
+    line_spacing=text_segment.style.line_spacing,
+    auto_wrapping=text_segment.style.auto_wrapping,
+    max_line_width=text_segment.style.max_line_width,
+)
+styles = [alt_style if index % 2 == 0 else None for index in range(len(text_segment.text))]
+text_segment.set_style_ranges_by_chars(styles=styles)
+script.add_segment(text_segment, track=caption_ref)  # 加到caption轨道中
 
 # 保存草稿
 script.save()
+
+# 如需把新草稿在首存后立即移入逻辑文件夹，可参考：
+# draft_folder.create_folder("示例文件夹")
+# draft_folder.create_folder("示例文件夹/嵌套")
+# draft_folder.move_draft_to_folder("demo", "示例文件夹/嵌套")
+
+# 如需把草稿移回顶层视图，可参考：
+# draft_folder.move_draft_to_root("demo")
+
+# 删除逻辑文件夹。
+# `move_drafts_to_root` 会先把该子树中的草稿映射移回顶层，再删除整棵文件夹子树。
+# draft_folder.remove_folder("示例文件夹", on_non_empty="move_drafts_to_root")
+
+# 如果你确认要连同子树内草稿的物理目录一起删除，可改用：
+# draft_folder.remove_folder("示例文件夹", on_non_empty="delete_drafts")

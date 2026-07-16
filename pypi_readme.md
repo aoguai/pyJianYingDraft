@@ -3,10 +3,6 @@
 # pyJianYingDraft
 ### 轻量、灵活、易上手的Python剪映草稿生成及导出工具，构建全自动视频剪辑/混剪流水线！
 
-> 🧪 本项目的**CapCut版本**正在开发中，欢迎关注[CapCut版本仓库](https://github.com/GuanYixuan/pyCapCut)
-
-> 📢 欢迎加入[Discord服务器](https://discord.gg/WfHgGQvhyW)进行用法或新功能的讨论
-
 ## 使用思路
 ![使用思路](https://github.com/aoguai/pyJianYingDraft/raw/main/readme_assets/%E4%BD%BF%E7%94%A8%E6%80%9D%E8%B7%AF.jpg)
 
@@ -20,9 +16,10 @@
 | 本地视频/图片素材与时间控制 | ✅ | 10.8 ✅ |
 | 视频整体调节 | ✅ | 10.8 ✅ |
 | 视频关键帧 | ✅ | 10.8 ✅ |
-| 视频蒙版 | ✅ | 10.8 ✅ |
+| 视频蒙版 | ✅ | 10.8 🟡<br>本 fork 已接入，需本机验证 |
 | 视频色度抠图 | ✅ | 10.8 ✅ |
-| 视频背景填充[(示例代码)](https://github.com/GuanYixuan/pyJianYingDraft/blob/main/demo.py) | ✅ | 10.8 ✅ |
+| 美颜与肤色 | ✅ | 本 fork ✅ |
+| 视频背景填充[(示例代码)](https://github.com/aoguai/pyJianYingDraft/blob/main/demo.py) | ✅ | 10.8 ✅ |
 | 视频混合模式 | ✅ | 10.8 ✅ |
 
 ### 贴纸
@@ -58,7 +55,7 @@
 | 视频片段滤镜 | ✅ | 10.8 ✅ |
 | 独立轨道特效 | ✅ | 10.8 ✅ |
 | 独立轨道滤镜 | ✅ | 10.8 ✅ |
-| 转场[(示例代码)](https://github.com/GuanYixuan/pyJianYingDraft/blob/main/demo.py) | ✅ | 10.8 ✅ |
+| 转场[(示例代码)](https://github.com/aoguai/pyJianYingDraft/blob/main/demo.py) | ✅ | 10.8 ✅ |
 
 ### 文本及字幕
 
@@ -69,13 +66,13 @@
 | 文本关键帧 | ✅ | 10.8 ✅ |
 | 文本动画 | ✅ | 10.8 ✅ |
 | 文字描边、背景和阴影 | ✅ | 10.8 ✅ |
-| 文字气泡效果和花字效果[(示例代码)](https://github.com/GuanYixuan/pyJianYingDraft/blob/main/demo.py) | ✅ | 10.8 ✅ |
+| 文字气泡、花字与逐字富文本样式[(示例代码)](https://github.com/aoguai/pyJianYingDraft/blob/main/demo.py) | ✅ | 10.8 ✅ |
 | 文本自动换行 | ✅ | 10.8 ✅ |
 | 导入 `.srt` 字幕 | ✅ | 10.8 ✅ |
 
 
 ### 模板模式
-> ⚠️ 新版剪映中的 `draft_content.json` 往往不是可直接读取的明文 JSON；因此“加载模板”相关能力在新版剪映上通常需要通过 `DraftFolder(..., fallback_loader=...)` 接入额外读取器，详请请参见[此处](https://github.com/GuanYixuan/pyJianYingDraft/releases)
+> ⚠️ 新版剪映中的 `draft_content.json` 往往不是可直接读取的明文 JSON；因此“加载模板”相关能力在新版剪映上通常需要通过 `DraftFolder(..., fallback_loader=...)` 接入额外读取器，详情请参见[此处](https://github.com/GuanYixuan/pyJianYingDraft/releases)
 
 > ℹ 本 fork 额外提供可逆的 `content_codec` 私有扩展，用于拥有合法访问权的本机草稿格式；它不是上游公开实现，也不应进入面向上游的 PR。
 
@@ -86,6 +83,8 @@
 | 修改文本片段的文本内容 | ✅ | 10.8 🟡<br>依赖模板可读 |
 | 将模板草稿中的音视频/文本轨道整体导入到另一草稿中 | ✅ | 10.8 🟡<br>依赖模板可读 |
 | 提取模板中出现的贴纸/气泡/花字等元信息 | ✅ | 10.8 🟡<br>依赖模板可读 |
+| 私有 `content_codec` 可逆读写与原格式保持 | - | 本 fork ✅ |
+| 私有草稿注册与逻辑文件夹 | - | 本 fork ✅ |
 
 ### 批量导出
 > ⚠️ 自动导出依赖旧版剪映可见控件；新版（7及以上）剪映通常不再满足这一前提
