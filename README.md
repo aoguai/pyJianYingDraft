@@ -62,6 +62,7 @@
 |---|---|---|
 | [文本与样式](#添加文本) | ✅ | 10.8 ✅ |
 | [字体](#添加文本) | 🟡<br>未缓存的字体需要二次打开草稿 | 10.8 🟡<br>未缓存的字体需要二次打开草稿 |
+| [本机字体路径](#添加文本) | - | 本 fork ✅<br>写入字幕顶层元数据 |
 | [文本关键帧](#关键帧) | ✅ | 10.8 ✅ |
 | [文本动画](#添加片段动画) | ✅ | 10.8 ✅ |
 | 文字描边、背景和阴影 | ✅ | 10.8 ✅ |
@@ -73,7 +74,7 @@
 ### 模板模式
 > ⚠️ 新版剪映中的 `draft_content.json` 往往不是可直接读取的明文 JSON；因此“加载模板”相关能力在新版剪映上通常需要通过 `DraftFolder(..., fallback_loader=...)` 接入额外读取器，详情请参见[此处](https://github.com/GuanYixuan/pyJianYingDraft/releases)
 
-> ℹ 本 fork 额外提供可逆的 `content_codec` 私有扩展，用于拥有合法访问权的本机草稿格式；它不是上游公开实现，也不应进入面向上游的 PR。
+> ℹ 本 fork 额外提供可逆的 `content_codec` 私有扩展，用于拥有合法访问权的本机草稿格式；它不是上游公开实现，也不应进入面向上游的 PR。使用内置加密 codec 时，项目会通过本机剪映的 `videoeditor.dll` 完成加解密，不分发该 DLL。
 
 | 功能名称 | 5.9 支持状态 | 新版剪映支持状态 |
 |---|---|---|
@@ -106,6 +107,16 @@ pip install pyJianYingDraft
 ### 跨平台兼容性
 - **Windows**：支持包括草稿生成、模板模式和自动导出在内的所有功能（具体可能受到剪映版本限制）
 - **Linux/MacOS**：支持草稿生成和模板模式，但**不支持自动导出**，且注意**生成的草稿仍然需要在Windows版剪映下导出**。
+
+> ℹ 加密草稿能力需要 Windows 64 位 Python 与本机剪映环境；当前参考实现已在剪映 `10.3.0` 到 `10.6.5` 范围内验证，其他版本不保证兼容。
+
+## 许可证
+
+本项目按 Apache License 2.0 开源，具体许可条款请见本仓库 [LICENSE](LICENSE) 文件。
+
+### 致谢
+
+- [wenshui330/jy-draftc](https://github.com/wenshui330/jy-draftc)：提供剪映高版本草稿 JSON 加解密方案参考并移植自此项目。
 <!-- PYPI:END -->
 
 # 快速上手
@@ -754,7 +765,18 @@ seg1 = draft.TextSegment("Subtitle", trange("0s", "10s"),
                           clip_settings=ClipSettings(transform_y=-0.8))
 ```
 
-更具体的参数说明可参见`TextStyle`和`ClipSettings`的构造函数。
+如果需要让剪映草稿记录一个已验证的本机字体文件路径，可以传入`font_path`。该参数只写入字幕顶层元数据，不会替代`font`参数的字体类型设置；从模板创建文本片段时也会保留该路径：
+
+```python
+seg2 = draft.TextSegment(
+    "使用本机字体文件的文本",
+    trange("0s", "10s"),
+    font_path=r"C:\\Windows\\Fonts\\msyh.ttc",
+    style=TextStyle(size=5.0),
+)
+```
+
+更具体的参数说明可参见`TextSegment`、`TextStyle`和`ClipSettings`的构造函数。
 
 #### 文本气泡与花字
 文本气泡和花字都以枚举元数据形式提供；添加后会同时写入文字片段的引用和草稿素材列表。
