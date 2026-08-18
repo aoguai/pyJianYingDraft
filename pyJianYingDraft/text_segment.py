@@ -305,6 +305,8 @@ class TextSegment(VisualSegment):
     """文本内容（多段落时用换行符拼接）"""
     font: Optional[EffectMeta]
     """字体类型"""
+    font_path: str
+    """字幕素材顶层使用的本机字体路径"""
     style: TextStyle
     """字体样式"""
     style_ranges: Optional[List[Dict[str, Any]]]
@@ -323,7 +325,7 @@ class TextSegment(VisualSegment):
     """文本花字效果, 在放入轨道时加入素材列表中, 目前仅支持一部分花字效果"""
 
     def __init__(self, text: Union[str, List[str]], timerange: Timerange, *,
-                 font: Optional[FontType] = None,
+                 font: Optional[FontType] = None, font_path: Optional[str] = None,
                  style: Optional[TextStyle] = None, clip_settings: Optional[ClipSettings] = None,
                  border: Optional[TextBorder] = None, background: Optional[TextBackground] = None,
                  shadow: Optional[TextShadow] = None,
@@ -336,6 +338,7 @@ class TextSegment(VisualSegment):
             text (`str` or `List[str]`): 文本内容；若传入字符串列表则表示多段落，将用换行符拼接
             timerange (`Timerange`): 片段在轨道上的时间范围
             font (`Font_type`, optional): 字体类型, 默认为系统字体
+            font_path (`str`, optional): 已验证的本机系统字体路径，仅写入字幕顶层元数据
             style (`TextStyle`, optional): 字体样式, 包含大小/颜色/对齐/透明度等.
             clip_settings (`ClipSettings`, optional): 图像调节设置, 默认不做任何变换
             border (`TextBorder`, optional): 文本描边参数, 默认无描边
@@ -358,6 +361,7 @@ class TextSegment(VisualSegment):
 
         self.text = text
         self.font = font.value if font else None
+        self.font_path = str(font_path or "")
         self.style = style or TextStyle()
         self.border = border
         self.background = background
@@ -370,7 +374,8 @@ class TextSegment(VisualSegment):
     @classmethod
     def create_from_template(cls, text: Union[str, List[str]], timerange: Timerange, template: "TextSegment") -> "TextSegment":
         """根据模板创建新的文本片段, 并指定其文本内容"""
-        new_segment = cls(text, timerange, style=deepcopy(template.style), clip_settings=deepcopy(template.clip_settings),
+        new_segment = cls(text, timerange, font_path=template.font_path,
+                          style=deepcopy(template.style), clip_settings=deepcopy(template.clip_settings),
                           border=deepcopy(template.border), background=deepcopy(template.background),
                           shadow=deepcopy(template.shadow))
         new_segment.font = deepcopy(template.font)
@@ -649,7 +654,7 @@ class TextSegment(VisualSegment):
                 "font_category_name": "",
                 "font_id": "",
                 "font_name": "",
-                "font_path": "",
+                "font_path": self.font_path,
                 "font_resource_id": "",
                 "font_size": float(self.style.size),
                 "font_source_platform": 0,
